@@ -8,7 +8,7 @@ const AppContainer = styled.div`
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
-  background-color: #ffffff;
+  background-color: #fff8e1; // 연한 노란색 배경
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 `;
 
