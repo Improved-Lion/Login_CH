@@ -4,12 +4,14 @@ import { Suspense } from "react";
 import { RouterProvider } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import router from "./routes/routes";
+import GlobalStyle from "@/styles/GlobalStyles";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   return (
     <>
+      <GlobalStyle />
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
           <Suspense fallback={<text>Loading...</text>}>

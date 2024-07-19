@@ -6,7 +6,7 @@ import {
 import RootLayout from "@/layouts/RootLayout";
 import Home from "@/pages/Home";
 import SignUp from "@/pages/SignUp";
-import Login from "../pages/Login";
+import Login from "@/pages/Login";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
