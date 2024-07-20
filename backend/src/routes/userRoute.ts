@@ -1,67 +1,75 @@
-import express from 'express';
-import * as userController from '../controllers/userController';
+import express from "express";
+import * as userController from "../controllers/userController";
 
 const router = express.Router();
 
 /**
  * @swagger
- * /api/users/register:
- *   post:
- *     summary: Register a new user
+ * /api/users/me:
+ *   get:
+ *     summary: 현재 로그인한 유저 정보 조회
  *     tags: [Users]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - username
- *               - email
- *               - password
- *             properties:
- *               username:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
  *     responses:
- *       201:
- *         description: User created successfully
+ *       200:
+ *         description: User information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 username:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 full_name:
+ *                   type: string
+ *                 profile_image_url:
+ *                   type: string
+ *       404:
+ *         description: User not found
  *       500:
  *         description: Server error
  */
-router.post('/register', userController.register);
+router.get("/me", userController.getUserInfo);
 
 /**
  * @swagger
- * /api/users/login:
- *   post:
- *     summary: Login a user
+ * /api/users/{userEmail}:
+ *   get:
+ *     summary: 특정 유저 정보 조회
  *     tags: [Users]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - username
- *               - password
- *             properties:
- *               username:
- *                 type: string
- *               password:
- *                 type: string
+ *     parameters:
+ *       - in: path
+ *         name: userEmail
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 조회할 유저의 이메일
  *     responses:
  *       200:
- *         description: Login successful
- *       401:
- *         description: Invalid credentials
+ *         description: User information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 username:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 full_name:
+ *                   type: string
+ *                 profile_image_url:
+ *                   type: string
+ *       404:
+ *         description: User not found
  *       500:
  *         description: Server error
  */
-router.post('/login', userController.login);
+router.get("/:userEmail", userController.getUserByEmail);
 
 export default router;
