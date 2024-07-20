@@ -22,19 +22,20 @@ export const Logo = styled.h1`
 `;
 
 export const LionImage = styled.img`
-  width: 150px;
-  height: 150px;
-  margin-bottom: 20px;
+  width: 120px;
+  height: 120px;
+  margin: 10px 0;
 `;
 
 export const Title = styled.h2`
   font-size: 24px;
   text-align: center;
-  margin-bottom: 20px;
   color: #8d6e63;
 `;
 export const StyledForm = styled.form`
   width: 100%;
+  height: 30%;
+  margin: 10px 0;
 `;
 
 export const ErrorMessage = styled.span`
@@ -60,8 +61,14 @@ export const SocialButtonText = styled.span`
 export const StyledInput = styled(Input)`
   margin-bottom: 10px;
   width: 100%;
+  display: inline-block;
   padding: 12px;
   font-size: 16px;
+`;
+export const StyledLabel = styled.label`
+  display: inline-block;
+  margin-bottom: 4px;
+  color: #8d6e63;
 `;
 
 export const StyledButton = styled(Button)`
@@ -77,32 +84,65 @@ export const StyledButton = styled(Button)`
   }
 `;
 
+export const LoginEtcContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  gap: 10px;
+`;
 export const CheckboxContainer = styled.div`
   display: flex;
   align-items: center;
-  margin-top: 10px;
+  gap: 4px;
   color: #8d6e63;
+  width: 30%;
 `;
 
 export const LinkContainer = styled.div`
   display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-  width: 100%;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
   a {
     color: #8d6e63;
     text-decoration: none;
+    min-width: 60px;
+    text-align: center;
     &:hover {
       text-decoration: underline;
     }
   }
 `;
-
 export const SocialLoginContainer = styled.div`
   display: flex;
-  justify-content: space-around;
-  margin-top: 20px;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 15px;
+`;
+export const SocialLoginText = styled.p`
+  color: #8d6e63;
+  font-size: 14px;
+  text-align: center;
+`;
+export const SocialText = styled.div`
+  display: flex;
+  align-items: center;
+  color: #8d6e63;
+  font-size: 14px;
+  text-align: center;
   width: 100%;
+  margin: 20px 0;
+
+  span {
+    padding: 0 10px;
+  }
+`;
+export const SocialButtonContainer = styled.div`
+  display: flex;
+  justify-content: space-around;
+  margin-top: 15px;
+  width: 100%;
+  gap: 20px;
 `;
 
 export const SocialButton = styled.button`
@@ -113,4 +153,16 @@ export const SocialButton = styled.button`
   cursor: pointer;
   font-weight: bold;
   color: #ffffff;
+`;
+export const VerticalDivider = styled.hr`
+  display: inline-block;
+  margin-top: 5px;
+  border-left: 1px solid #8d6e63; //오른쪽에만 선 부여
+  height: 15px;
+`;
+export const HorizontalDivider = styled.hr`
+  flex-grow: 1;
+  border: 0;
+  height: 1px;
+  background-color: #8d6e63;
 `;
