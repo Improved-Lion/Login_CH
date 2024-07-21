@@ -32,7 +32,12 @@ const options = {
 const specs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
-// 라우트
+// 기본 라우트 추가
+app.get("/", (req, res) => {
+  res.send("Welcome to the Improved Lion API!");
+});
+
+// 라우트 설정
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 

@@ -1,47 +1,120 @@
-// pages/Login.tsx
-import { useForm } from "react-hook-form";
+import { useEffect } from "react";
+import { SubmitErrorHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import * as S from "@/components/login/Login.styled";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import client from "@/api/client";
+import { useAuthStore } from "@/store/authStore";
+import { AxiosError } from "axios";
+import { FieldErrors } from "react-hook-form";
 
 const schema = z.object({
-  username: z.string().min(1, { message: "아이디를 입력해주세요" }),
+  email: z.string().email({ message: "올바른 이메일을 입력해주세요" }),
   password: z.string().min(1, { message: "비밀번호를 입력해주세요" }),
-  rememberMe: z.boolean().optional(),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 type LoginFormData = z.infer<typeof schema>;
+type LoginResponse = { message: string; token: string };
 
-const Login: React.FC = () => {
+const loginUser = async (
+  data: Omit<LoginFormData, "rememberMe">
+): Promise<LoginResponse> => {
+  console.log("loginUser called with data:", data);
+  const response = await client.post<LoginResponse>("/auth/login", data);
+  return response.data;
+};
+
+const Login = () => {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
+    watch,
+    setValue,
   } = useForm<LoginFormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      rememberMe: false,
+    },
+  });
+
+  const setToken = useAuthStore((state) => state.setToken);
+
+  const loginMutation = useMutation({
+    mutationFn: loginUser,
+    onSuccess: (data) => {
+      console.log("Login successful:", data);
+      const { token } = data;
+      const rememberMe = watch("rememberMe");
+
+      if (rememberMe) {
+        localStorage.setItem("token", token);
+      } else {
+        sessionStorage.setItem("token", token);
+      }
+
+      setToken(token);
+      navigate("/"); // '/home' 대신 '/'로 수정
+    },
+    onError: (error: AxiosError) => {
+      console.error("Login error:", error);
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        alert(`Login failed: ${JSON.stringify(error.response.data)}`);
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        alert("No response received from server");
+      } else {
+        console.error("Error:", error.message);
+        alert(`Error: ${error.message}`);
+      }
+    },
   });
 
   const onSubmit = (data: LoginFormData) => {
-    console.log(data);
+    console.log("onSubmit called with data:", data);
+    const { rememberMe, ...loginData } = data;
+    loginMutation.mutate(loginData);
   };
+
+  const onError: SubmitErrorHandler<LoginFormData> = (errors: FieldErrors) => {
+    console.error("Form validation failed:", errors);
+  };
+
+  useEffect(() => {
+    const subscription = watch((value, { name, type }) =>
+      console.log("Form value changed:", value, name, type)
+    );
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log("Form errors:", errors);
+    }
+  }, [errors]);
 
   return (
     <S.LoginContainer>
       <S.Logo>Improved Lion</S.Logo>
       <S.LionImage src="/Improved Lion.png" alt="Improved Lion" />
       <S.Title>회원 로그인</S.Title>
-      <S.StyledForm onSubmit={handleSubmit(onSubmit)}>
-        <S.StyledLabel htmlFor="username">아이디</S.StyledLabel>
+      <S.StyledForm onSubmit={handleSubmit(onSubmit, onError)}>
+        <S.StyledLabel htmlFor="email">이메일</S.StyledLabel>
         <S.StyledInput
-          id="username"
-          {...register("username")}
-          placeholder="아이디"
-          aria-invalid={errors.username ? "true" : "false"}
+          id="email"
+          {...register("email")}
+          placeholder="이메일"
+          aria-invalid={errors.email ? "true" : "false"}
         />
-        {errors.username && (
-          <S.ErrorMessage>{errors.username.message}</S.ErrorMessage>
+        {errors.email && (
+          <S.ErrorMessage>{errors.email.message}</S.ErrorMessage>
         )}
 
         <S.StyledLabel htmlFor="password">비밀번호</S.StyledLabel>
@@ -56,10 +129,17 @@ const Login: React.FC = () => {
           <S.ErrorMessage>{errors.password.message}</S.ErrorMessage>
         )}
 
-        <S.StyledButton type="submit">로그인</S.StyledButton>
         <S.LoginEtcContainer>
           <S.CheckboxContainer>
-            <Checkbox id="remember" {...register("rememberMe")} />
+            <Checkbox
+              id="remember"
+              {...register("rememberMe")}
+              onCheckedChange={(checked) => {
+                if (typeof checked === "boolean") {
+                  setValue("rememberMe", checked);
+                }
+              }}
+            />
             <S.StyledLabel htmlFor="remember">로그인 유지</S.StyledLabel>
           </S.CheckboxContainer>
           <S.LinkContainer>
@@ -68,7 +148,18 @@ const Login: React.FC = () => {
             <Link to="/forgotPassword">정보찾기</Link>
           </S.LinkContainer>
         </S.LoginEtcContainer>
+
+        <S.StyledButton
+          type="submit"
+          disabled={isSubmitting || loginMutation.status === "pending"}
+          onClick={() => console.log("Login button clicked")}
+        >
+          {isSubmitting || loginMutation.status === "pending"
+            ? "로그인 중..."
+            : "로그인"}
+        </S.StyledButton>
       </S.StyledForm>
+
       <S.SocialText>
         <S.HorizontalDivider />
         <span>또는</span>

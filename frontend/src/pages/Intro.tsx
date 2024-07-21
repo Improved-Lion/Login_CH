@@ -10,7 +10,7 @@ const Intro: React.FC = () => {
     navigate(`/${name}`);
   };
   return (
-    <HomeContainer>
+    <IntroContainer>
       <Title>Improved Lion</Title>
       <LionImage src="/Improved Lion.png" alt="Improved Lion" />
       <ButtonContainer>
@@ -21,12 +21,12 @@ const Intro: React.FC = () => {
           회원가입
         </StyledButton>
       </ButtonContainer>
-    </HomeContainer>
+    </IntroContainer>
   );
 };
 
 export default Intro;
-const HomeContainer = styled.div`
+const IntroContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;

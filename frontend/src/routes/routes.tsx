@@ -11,6 +11,10 @@ import Login from "@/pages/Login";
 import Intro from "@/pages/Intro";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 
+const isAuthenticated = () => {
+  return sessionStorage.getItem("token") || localStorage.getItem("token");
+};
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<RootLayout />}>
@@ -22,17 +26,21 @@ const router = createBrowserRouter(
           </ProtectedRoute>
         }
       />
-      <Route path="/intro" element={<Intro />} />
-      <Route path="/signUp" element={<SignUp />} />
-      <Route path="/login" element={<Login />} />
+      <Route
+        path="/intro"
+        element={isAuthenticated() ? <Navigate to="/" replace /> : <Intro />}
+      />
+      <Route
+        path="/signUp"
+        element={isAuthenticated() ? <Navigate to="/" replace /> : <SignUp />}
+      />
+      <Route
+        path="/login"
+        element={isAuthenticated() ? <Navigate to="/" replace /> : <Login />}
+      />
       <Route
         path="*"
-        element={
-          <Navigate
-            to={sessionStorage.getItem("authorizedUser") ? "/" : "/intro"}
-            replace
-          />
-        }
+        element={<Navigate to={isAuthenticated() ? "/" : "/intro"} replace />}
       />
     </Route>
   )
