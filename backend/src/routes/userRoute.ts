@@ -1,3 +1,4 @@
+// src/routes/userRoutes.ts
 import express from "express";
 import * as userController from "../controllers/userController";
 
@@ -71,5 +72,57 @@ router.get("/me", userController.getUserInfo);
  *         description: Server error
  */
 router.get("/:userEmail", userController.getUserByEmail);
+
+/**
+ * @swagger
+ * /api/users/send-verification-code:
+ *   post:
+ *     summary: 비밀번호 재설정을 위한 인증 코드 전송
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Verification code sent successfully
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.post("/send-verification-code", userController.sendVerificationCode);
+
+/**
+ * @swagger
+ * /api/users/verify-code:
+ *   post:
+ *     summary: 인증 코드 확인
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               verificationCode:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Verification code is valid
+ *       400:
+ *         description: Invalid verification code
+ *       500:
+ *         description: Server error
+ */
+router.post("/verify-code", userController.verifyCode);
 
 export default router;

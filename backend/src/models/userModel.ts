@@ -54,4 +54,27 @@ export const getUserById = async (id: string): Promise<User | null> => {
   return result.rows[0] || null;
 };
 
+export const saveVerificationCode = async (
+  email: string,
+  code: string
+): Promise<void> => {
+  const query = `
+    UPDATE users
+    SET verification_code = $1, verification_code_expires = NOW() + INTERVAL '15 minutes'
+    WHERE email = $2
+  `;
+  await pool.query(query, [code, email]);
+};
+
+export const verifyCode = async (
+  email: string,
+  code: string
+): Promise<boolean> => {
+  const query = `
+    SELECT * FROM users
+    WHERE email = $1 AND verification_code = $2 AND verification_code_expires > NOW()
+  `;
+  const result = await pool.query(query, [email, code]);
+  return result.rows.length > 0;
+};
 // 추가 CRUD 함수들...
