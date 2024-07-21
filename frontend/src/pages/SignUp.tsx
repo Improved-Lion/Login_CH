@@ -58,7 +58,7 @@ const signUpUser = async (
   const response = await client.post<SignUpResponse>("/auth/register", data);
   return response.data;
 };
-const SignUp: React.FC = () => {
+const SignUp = () => {
   const navigate = useNavigate();
   const {
     register,

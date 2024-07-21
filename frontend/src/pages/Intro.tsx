@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-const Intro: React.FC = () => {
+const Intro = () => {
   const navigate = useNavigate();
 
   const handleNavigate = (name: string) => () => {

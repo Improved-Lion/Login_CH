@@ -145,7 +145,7 @@ const Login = () => {
           <S.LinkContainer>
             <Link to="/signUp">회원가입</Link>
             <S.VerticalDivider />
-            <Link to="/forgotPassword">정보찾기</Link>
+            <Link to="/forgotPassword">비밀번호 찾기</Link>
           </S.LinkContainer>
         </S.LoginEtcContainer>
 
