@@ -59,7 +59,7 @@ const Login = () => {
       }
 
       setToken(token);
-      navigate("/"); // '/home' 대신 '/'로 수정
+      navigate("/");
     },
     onError: (error: AxiosError) => {
       console.error("Login error:", error);

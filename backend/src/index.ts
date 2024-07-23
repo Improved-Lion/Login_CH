@@ -37,6 +37,10 @@ app.get("/", (req, res) => {
   res.send("Welcome to the Improved Lion API!");
 });
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is not defined in the environment variables");
+}
 // 라우트 설정
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);

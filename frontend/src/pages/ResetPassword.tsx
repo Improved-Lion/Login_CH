@@ -1,6 +1,9 @@
 import { useForm, SubmitHandler } from "react-hook-form";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as S from "@/styles/CommonStyles";
+import client from "@/api/client";
+import axios from "axios";
+import { useEffect } from "react";
 
 interface ResetPasswordFormData {
   password: string;
@@ -8,7 +11,20 @@ interface ResetPasswordFormData {
 }
 
 const ResetPassword = () => {
-  const { token } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { email, verificationCode } = location.state as {
+    email: string;
+    verificationCode: string;
+  };
+
+  useEffect(() => {
+    if (!email || !verificationCode) {
+      alert("잘못된 접근입니다. 비밀번호 찾기 페이지로 이동합니다.");
+      navigate("/forgotPassword");
+    }
+  }, [email, verificationCode, navigate]);
+
   const {
     register,
     handleSubmit,
@@ -16,11 +32,29 @@ const ResetPassword = () => {
     watch,
   } = useForm<ResetPasswordFormData>();
 
-  const onSubmit: SubmitHandler<ResetPasswordFormData> = (data) => {
-    // 여기에 비밀번호 재설정 로직을 구현합니다.
-    // API가 구현되면 실제 요청을 보내도록 수정해야 합니다.
-    console.log("비밀번호 재설정 요청:", data.password, "토큰:", token);
-    alert("비밀번호가 성공적으로 변경되었습니다. (실제로 변경되지 않음)");
+  const onSubmit: SubmitHandler<ResetPasswordFormData> = async (data) => {
+    try {
+      console.log("Sending request with:", {
+        email,
+        password: data.password,
+        verificationCode,
+      });
+      const response = await client.post("/users/reset-password", {
+        email,
+        password: data.password,
+        verificationCode,
+      });
+      alert(response.data.message || "비밀번호가 성공적으로 변경되었습니다.");
+      navigate("/login");
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        console.error("서버 응답:", error.response.data);
+        alert(`비밀번호 재설정 실패: ${error.response.data.message}`);
+      } else {
+        console.error("비밀번호 재설정 오류:", error);
+        alert("비밀번호 재설정에 실패했습니다. 다시 시도해주세요.");
+      }
+    }
   };
 
   return (

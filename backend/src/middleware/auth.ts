@@ -65,6 +65,7 @@ export const registerUser = async (req: Request, res: Response) => {
 };
 
 // JWT 토큰 검증 미들웨어
+
 export const authenticateToken = (
   req: Request,
   res: Response,
@@ -75,15 +76,11 @@ export const authenticateToken = (
 
   if (token == null) return res.sendStatus(401);
 
-  jwt.verify(
-    token,
-    JWT_SECRET,
-    (err: jwt.VerifyErrors | null, decoded: any) => {
-      if (err) return res.sendStatus(403);
-      (req as any).user = { userId: decoded.userId };
-      next();
-    }
-  );
+  jwt.verify(token, process.env.JWT_SECRET as string, (err: any, user: any) => {
+    if (err) return res.sendStatus(403);
+    (req as any).userId = user.userId;
+    next();
+  });
 };
 
 // 추가 인증 관련 함수들...

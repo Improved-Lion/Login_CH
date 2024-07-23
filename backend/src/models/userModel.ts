@@ -14,6 +14,8 @@ export interface User {
   access_token?: string;
   created_at?: Date;
   updated_at?: Date;
+  verification_code?: string;
+  verification_code_expires?: Date;
 }
 export const createUser = async (user: User): Promise<User> => {
   const hashedPassword = await bcrypt.hash(user.password, 10);
@@ -63,9 +65,19 @@ export const saveVerificationCode = async (
     SET verification_code = $1, verification_code_expires = NOW() + INTERVAL '15 minutes'
     WHERE email = $2
   `;
-  await pool.query(query, [code, email]);
+  try {
+    const result = await pool.query(query, [code, email]);
+    console.log(
+      `Verification code save result: ${result.rowCount} rows affected`
+    );
+    if (result.rowCount === 0) {
+      console.log(`No user found with email: ${email}`);
+    }
+  } catch (error) {
+    console.error("Error saving verification code:", error);
+    throw error;
+  }
 };
-
 export const verifyCode = async (
   email: string,
   code: string
@@ -74,7 +86,41 @@ export const verifyCode = async (
     SELECT * FROM users
     WHERE email = $1 AND verification_code = $2 AND verification_code_expires > NOW()
   `;
-  const result = await pool.query(query, [email, code]);
-  return result.rows.length > 0;
+  try {
+    const result = await pool.query(query, [email, code]);
+    console.log(`Verification query result: ${result.rows.length} rows found`);
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error("Error verifying code:", error);
+    throw error;
+  }
+};
+
+export const resetPassword = async (
+  email: string,
+  newPassword: string
+): Promise<boolean> => {
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const query = `
+    UPDATE users
+    SET password = $1, verification_code = NULL, verification_code_expires = NULL
+    WHERE email = $2
+  `;
+  const result = await pool.query(query, [hashedPassword, email]);
+  return result.rowCount !== null && result.rowCount > 0;
+};
+
+export const resetPasswordAndClearCode = async (
+  email: string,
+  newPassword: string
+): Promise<boolean> => {
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const query = `
+    UPDATE users
+    SET password = $1, verification_code = NULL, verification_code_expires = NULL
+    WHERE email = $2 AND verification_code IS NOT NULL
+  `;
+  const result = await pool.query(query, [hashedPassword, email]);
+  return result.rowCount !== null && result.rowCount > 0;
 };
 // 추가 CRUD 함수들...

@@ -57,7 +57,7 @@ const router = createBrowserRouter([
         ),
       },
       { path: "forgotPassword", element: lazyLoad(pages.ForgotPassword) },
-      { path: "resetPassword/:token", element: lazyLoad(pages.ResetPassword) },
+      { path: "resetPassword", element: lazyLoad(pages.ResetPassword) },
       {
         path: "*",
         element: <Navigate to={isAuthenticated() ? "/" : "/intro"} replace />,

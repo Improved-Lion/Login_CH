@@ -53,3 +53,9 @@ export const login = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const logout = async (req: Request, res: Response) => {
+  // 여기서 필요한 경우 DB에서 토큰을 무효화하는 로직을 추가할 수 있습니다.
+  // 예: await invalidateToken(req.user.id);
+  res.status(200).json({ message: "Logged out successfully" });
+};

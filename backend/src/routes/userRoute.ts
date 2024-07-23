@@ -1,6 +1,7 @@
 // src/routes/userRoutes.ts
 import express from "express";
 import * as userController from "../controllers/userController";
+import { authenticateToken } from "../middleware/auth";
 
 const router = express.Router();
 
@@ -10,6 +11,8 @@ const router = express.Router();
  *   get:
  *     summary: 현재 로그인한 유저 정보 조회
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: User information retrieved successfully
@@ -28,12 +31,14 @@ const router = express.Router();
  *                   type: string
  *                 profile_image_url:
  *                   type: string
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: User not found
  *       500:
  *         description: Server error
  */
-router.get("/me", userController.getUserInfo);
+router.get("/me", authenticateToken, userController.getUserInfo);
 
 /**
  * @swagger
