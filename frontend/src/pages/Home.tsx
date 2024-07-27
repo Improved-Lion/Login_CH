@@ -6,6 +6,7 @@ import client from "@/api/client";
 
 const Home = () => {
   const [userName, setUserName] = useState("");
+  const [userImage, setUserImage] = useState("");
   const navigate = useNavigate();
   const { token, setToken, clearToken } = useAuthStore();
 
@@ -15,6 +16,7 @@ const Home = () => {
         headers: { Authorization: `Bearer ${currentToken}` },
       });
       setUserName(response.data.full_name || response.data.username);
+      setUserImage(response.data.profile_image_url || ""); // 프로필 이미지 URL 설정
     } catch (error) {
       console.error("Error fetching user info:", error);
       if ((error as any).response && (error as any).response.status === 401) {
@@ -48,14 +50,13 @@ const Home = () => {
   return (
     <HomeContainer>
       <h1>Welcome, {userName}</h1>
+      {userImage && <UserImage src={userImage} alt={userName} />}
       <LogoutButton onClick={handleLogout}>로그아웃</LogoutButton>
     </HomeContainer>
   );
 };
 
 export default Home;
-
-// 스타일 컴포넌트는 그대로 유지
 
 const HomeContainer = styled.div`
   display: flex;
@@ -64,6 +65,15 @@ const HomeContainer = styled.div`
   justify-content: center;
   height: 100vh;
   padding: 20px;
+`;
+
+const UserImage = styled.img`
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 20px 0;
+  border: 3px solid #ffffee; // 노란색 테두리 추가
 `;
 
 const LogoutButton = styled.button`
