@@ -6,7 +6,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const isAuthorized = sessionStorage.getItem("token") !== null;
+  const isAuthorized =
+    sessionStorage.getItem("token") !== null ||
+    localStorage.getItem("refreshToken") !== null;
 
   if (!isAuthorized) {
     return <Navigate to="/intro" replace />;

@@ -51,7 +51,6 @@ export const StyledInput = styled(Input)`
 
 export const StyledLabel = styled.label`
   display: inline-block;
-  margin-bottom: 4px;
   color: #8d6e63;
 `;
 

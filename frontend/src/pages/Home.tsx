@@ -7,15 +7,22 @@ import client from "@/api/client";
 const Home = () => {
   const [userName, setUserName] = useState("");
   const navigate = useNavigate();
-  const { token, clearToken } = useAuthStore();
+  const { token, setToken, clearToken } = useAuthStore();
 
   useEffect(() => {
-    if (token) {
-      fetchUserInfo();
-    } else {
-      navigate("/login");
-    }
-  }, [token]);
+    const checkAuth = async () => {
+      const storedToken =
+        sessionStorage.getItem("token") || localStorage.getItem("refreshToken");
+      if (storedToken) {
+        setToken(storedToken);
+        await fetchUserInfo();
+      } else {
+        navigate("/login");
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const fetchUserInfo = async () => {
     try {
@@ -30,9 +37,9 @@ const Home = () => {
       }
     }
   };
-
   const handleLogout = async () => {
     await clearToken();
+    localStorage.removeItem("refreshToken");
     navigate("/login");
   };
 

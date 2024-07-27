@@ -12,12 +12,14 @@ const lazyLoad = (Component: React.LazyExoticComponent<() => JSX.Element>) => (
 );
 
 const isAuthenticated = () =>
-  sessionStorage.getItem("token") || localStorage.getItem("token");
+  sessionStorage.getItem("token") !== null ||
+  localStorage.getItem("refreshToken") !== null;
 
 const pages = {
   Home: lazy(() => import("@/pages/Home")),
   SignUp: lazy(() => import("@/pages/SignUp")),
   Login: lazy(() => import("@/pages/Login")),
+  EmailLogin: lazy(() => import("@/pages/EmailLogin")),
   Intro: lazy(() => import("@/pages/Intro")),
   ForgotPassword: lazy(() => import("@/pages/ForgotPassword")),
   ResetPassword: lazy(() => import("@/pages/ResetPassword")),
@@ -54,6 +56,14 @@ const router = createBrowserRouter([
           <Navigate to="/" replace />
         ) : (
           lazyLoad(pages.Login)
+        ),
+      },
+      {
+        path: "login/email",
+        element: isAuthenticated() ? (
+          <Navigate to="/" replace />
+        ) : (
+          lazyLoad(pages.EmailLogin)
         ),
       },
       { path: "forgotPassword", element: lazyLoad(pages.ForgotPassword) },

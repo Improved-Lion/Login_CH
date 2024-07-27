@@ -130,4 +130,35 @@ router.post("/send-verification-code", userController.sendVerificationCode);
  */
 router.post("/verify-code", userController.verifyCode);
 
+/**
+ * @swagger
+ * /api/users/reset-password:
+ *   post:
+ *     summary: 비밀번호 재설정
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               verificationCode:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *       400:
+ *         description: Invalid request or verification code
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.post("/reset-password", userController.resetPassword);
+
 export default router;

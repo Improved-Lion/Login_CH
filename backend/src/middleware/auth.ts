@@ -76,9 +76,13 @@ export const authenticateToken = (
 
   if (token == null) return res.sendStatus(401);
 
-  jwt.verify(token, process.env.JWT_SECRET as string, (err: any, user: any) => {
-    if (err) return res.sendStatus(403);
-    (req as any).userId = user.userId;
+  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+    if (err) {
+      console.error("Token verification error:", err);
+      return res.sendStatus(403);
+    }
+    (req as any).userId = user._id; // _id로 변경
+    (req as any).userType = user.type; // userType 추가
     next();
   });
 };

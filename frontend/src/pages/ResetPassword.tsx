@@ -49,7 +49,11 @@ const ResetPassword = () => {
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         console.error("서버 응답:", error.response.data);
-        alert(`비밀번호 재설정 실패: ${error.response.data.message}`);
+        alert(
+          `비밀번호 재설정 실패: ${
+            error.response.data.message || "알 수 없는 오류가 발생했습니다."
+          }`
+        );
       } else {
         console.error("비밀번호 재설정 오류:", error);
         alert("비밀번호 재설정에 실패했습니다. 다시 시도해주세요.");

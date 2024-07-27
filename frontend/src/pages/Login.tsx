@@ -1,204 +1,154 @@
-import { useEffect } from "react";
-import { SubmitErrorHandler, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import * as S from "@/components/login/Login.styled";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import * as S from "@/components/login/Login.styled";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useAuthStore } from "@/store/authStore"; // 인증 상태 관리 스토어
 import client from "@/api/client";
-import { useAuthStore } from "@/store/authStore";
-import { AxiosError } from "axios";
-import { FieldErrors } from "react-hook-form";
-
-const schema = z.object({
-  email: z.string().email({ message: "올바른 이메일을 입력해주세요" }),
-  password: z.string().min(1, { message: "비밀번호를 입력해주세요" }),
-  rememberMe: z.boolean().optional().default(false),
-});
-
-type LoginFormData = z.infer<typeof schema>;
-type LoginResponse = { message: string; token: string };
-
-const loginUser = async (
-  data: Omit<LoginFormData, "rememberMe">
-): Promise<LoginResponse> => {
-  console.log("loginUser called with data:", data);
-  const response = await client.post<LoginResponse>("/auth/login", data);
-  return response.data;
-};
 
 const Login = () => {
+  const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_APP_KEY;
+  const KAKAO_REDIRECT_URI = import.meta.env.VITE_REDIRECT_URL; // 동적으로 현재 도메인 사용
+  //const KAKAO_REDIRECT_URI = `${window.location.origin}/login`; // 동적으로 현재 도메인 사용
   const navigate = useNavigate();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    watch,
-    setValue,
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      rememberMe: false,
-    },
-  });
+  const { setToken, setUser, initialize } = useAuthStore();
+  const [isKakaoSDKLoaded, setIsKakaoSDKLoaded] = useState(false);
 
-  const setToken = useAuthStore((state) => state.setToken);
-
-  const loginMutation = useMutation({
-    mutationFn: loginUser,
-    onSuccess: (data) => {
-      console.log("Login successful:", data);
-      const { token } = data;
-      const rememberMe = watch("rememberMe");
-
-      if (rememberMe) {
-        localStorage.setItem("token", token);
-      } else {
-        sessionStorage.setItem("token", token);
-      }
-
-      setToken(token);
-      navigate("/");
-    },
-    onError: (error: AxiosError) => {
-      console.error("Login error:", error);
-      if (error.response) {
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
-        alert(`Login failed: ${JSON.stringify(error.response.data)}`);
-      } else if (error.request) {
-        console.error("No response received:", error.request);
-        alert("No response received from server");
-      } else {
-        console.error("Error:", error.message);
-        alert(`Error: ${error.message}`);
-      }
-    },
-  });
-
-  const onSubmit = (data: LoginFormData) => {
-    console.log("onSubmit called with data:", data);
-    const { rememberMe, ...loginData } = data;
-    loginMutation.mutate(loginData);
-  };
-
-  const onError: SubmitErrorHandler<LoginFormData> = (errors: FieldErrors) => {
-    console.error("Form validation failed:", errors);
+  const loadKakaoSDK = () => {
+    return new Promise<void>((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://developers.kakao.com/sdk/js/kakao.js";
+      script.async = true;
+      script.onload = () => {
+        window.Kakao.init(KAKAO_APP_KEY);
+        setIsKakaoSDKLoaded(true);
+        resolve();
+      };
+      document.body.appendChild(script);
+    });
   };
 
   useEffect(() => {
-    const subscription = watch((value, { name, type }) =>
-      console.log("Form value changed:", value, name, type)
-    );
-    return () => subscription.unsubscribe();
-  }, [watch]);
+    const initializeKakao = async () => {
+      if (typeof window.Kakao === "undefined") {
+        await loadKakaoSDK();
+      } else if (!window.Kakao.isInitialized()) {
+        window.Kakao.init(KAKAO_APP_KEY);
+      }
+      setIsKakaoSDKLoaded(true);
+    };
 
-  useEffect(() => {
-    if (Object.keys(errors).length > 0) {
-      console.log("Form errors:", errors);
+    initializeKakao();
+    initialize();
+  }, [initialize]);
+
+  const handleKakaoCallback = async (code: string) => {
+    try {
+      console.log("Sending request to server with code:", code);
+      const response = await client.post("/auth/kakao", { code });
+      console.log("Server response:", response.data);
+
+      if (response.data.ok === 1 && response.data.item) {
+        const { token, ...userInfo } = response.data.item;
+
+        sessionStorage.setItem("token", token.accessToken);
+        localStorage.setItem("refreshToken", token.refreshToken);
+
+        setToken(token.accessToken);
+        setUser(userInfo);
+
+        console.log("Login successful, navigating to home");
+        navigate("/"); // 즉시 홈으로 이동
+      } else {
+        throw new Error(response.data.message || "Login failed");
+      }
+    } catch (error) {
+      console.error("Kakao login error:", error);
+      if (axios.isAxiosError(error) && error.response) {
+        console.error("Error details:", error.response.data);
+        alert(
+          `로그인 실패: ${
+            error.response.data.message ||
+            error.response.data.error ||
+            "알 수 없는 오류"
+          }`
+        );
+      } else {
+        alert("로그인에 실패했습니다. 다시 시도해주세요.");
+      }
     }
-  }, [errors]);
+  };
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+    if (code) {
+      handleKakaoCallback(code);
+      // 코드를 사용한 후 URL에서 제거
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const handleKakaoLogin = () => {
+    if (isKakaoSDKLoaded && window.Kakao) {
+      try {
+        window.Kakao.Auth.authorize({
+          redirectUri: KAKAO_REDIRECT_URI,
+          scope: "profile_nickname, profile_image, account_email",
+        });
+      } catch (error) {
+        console.error("Kakao login error:", error);
+        alert("카카오 로그인 초기화에 실패했습니다. 다시 시도해주세요.");
+      }
+    } else {
+      console.error("Kakao SDK is not loaded");
+      alert(
+        "카카오 SDK 로딩에 실패했습니다. 페이지를 새로고침 후 다시 시도해주세요."
+      );
+    }
+  };
 
   return (
     <S.LoginContainer>
-      <S.Logo>Improved Lion</S.Logo>
-      <S.LionImage src="/Improved Lion.png" alt="Improved Lion" />
-      <S.Title>회원 로그인</S.Title>
-      <S.StyledForm onSubmit={handleSubmit(onSubmit, onError)}>
-        <S.StyledLabel htmlFor="email">이메일</S.StyledLabel>
-        <S.StyledInput
-          id="email"
-          {...register("email")}
-          placeholder="이메일"
-          aria-invalid={errors.email ? "true" : "false"}
-        />
-        {errors.email && (
-          <S.ErrorMessage>{errors.email.message}</S.ErrorMessage>
-        )}
-
-        <S.StyledLabel htmlFor="password">비밀번호</S.StyledLabel>
-        <S.StyledInput
-          id="password"
-          {...register("password")}
-          type="password"
-          placeholder="비밀번호"
-          aria-invalid={errors.password ? "true" : "false"}
-        />
-        {errors.password && (
-          <S.ErrorMessage>{errors.password.message}</S.ErrorMessage>
-        )}
-
-        <S.LoginEtcContainer>
-          <S.CheckboxContainer>
-            <Checkbox
-              id="remember"
-              {...register("rememberMe")}
-              onCheckedChange={(checked) => {
-                if (typeof checked === "boolean") {
-                  setValue("rememberMe", checked);
-                }
-              }}
-            />
-            <S.StyledLabel htmlFor="remember">로그인 유지</S.StyledLabel>
-          </S.CheckboxContainer>
-          <S.LinkContainer>
-            <Link to="/signUp">회원가입</Link>
-            <S.VerticalDivider />
-            <Link to="/forgotPassword">비밀번호 찾기</Link>
-          </S.LinkContainer>
-        </S.LoginEtcContainer>
-
-        <S.StyledButton
-          type="submit"
-          disabled={isSubmitting || loginMutation.status === "pending"}
-          onClick={() => console.log("Login button clicked")}
-        >
-          {isSubmitting || loginMutation.status === "pending"
-            ? "로그인 중..."
-            : "로그인"}
-        </S.StyledButton>
-      </S.StyledForm>
+      <S.Title>Improved Lion 로그인</S.Title>
+      <S.SocialLoginContainer>
+        <S.SocialButton $bgcolor="#FEE500" onClick={handleKakaoLogin}>
+          <S.SocialButtonIcon src="/kakao.webp" alt="Kakao" />
+          Kakao로 로그인
+        </S.SocialButton>
+        <S.SocialButton $bgcolor="#03C75A">
+          <S.SocialButtonIcon src="/naver.webp" alt="Naver" />
+          Naver로 로그인
+        </S.SocialButton>
+        <S.SocialButton as={Link} to="/login/email" $bgcolor="#CCCCCC">
+          <S.SocialButtonIcon src="/mail.svg" alt="Email" />
+          이메일로 로그인
+        </S.SocialButton>
+      </S.SocialLoginContainer>
 
       <S.SocialText>
         <S.HorizontalDivider />
-        <span>또는</span>
+        <span>다른 방법으로 로그인</span>
         <S.HorizontalDivider />
       </S.SocialText>
 
-      <S.SocialLoginContainer>
-        <S.SocialLoginText>SNS 계정으로 로그인</S.SocialLoginText>
-        <S.SocialButtonContainer>
-          <S.SocialButton
-            style={{ backgroundColor: "#03C75A" }}
-            aria-label="네이버로 로그인"
-          >
-            <S.SocialButtonText>네이버</S.SocialButtonText>N
-          </S.SocialButton>
-          <S.SocialButton
-            style={{ backgroundColor: "#FEE500" }}
-            aria-label="카카오로 로그인"
-          >
-            <S.SocialButtonText>카카오</S.SocialButtonText>K
-          </S.SocialButton>
-          <S.SocialButton
-            style={{ backgroundColor: "#1877F2" }}
-            aria-label="페이스북으로 로그인"
-          >
-            <S.SocialButtonText>페이스북</S.SocialButtonText>f
-          </S.SocialButton>
-          <S.SocialButton
-            style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #CCCCCC",
-              color: "#333",
-            }}
-            aria-label="구글로 로그인"
-          >
-            <S.SocialButtonText>구글</S.SocialButtonText>G
-          </S.SocialButton>
-        </S.SocialButtonContainer>
-      </S.SocialLoginContainer>
+      <S.OtherLoginContainer>
+        <S.OtherLoginButton>
+          <S.OtherLoginIcon src="/google.webp" alt="Google" />
+        </S.OtherLoginButton>
+        <S.OtherLoginButton>
+          <S.OtherLoginIcon src="/facebook.webp" alt="Facebook" />
+        </S.OtherLoginButton>
+        <S.OtherLoginButton>
+          <S.OtherLoginIcon src="/github.webp" alt="GitHub" />
+        </S.OtherLoginButton>
+        <S.OtherLoginButton>
+          <S.OtherLoginIcon src="/apple.webp" alt="Apple" />
+        </S.OtherLoginButton>
+      </S.OtherLoginContainer>
+
+      <S.SignUpLink>
+        아직 회원이 아니신가요? <Link to="/signUp">회원 가입</Link>
+      </S.SignUpLink>
     </S.LoginContainer>
   );
 };

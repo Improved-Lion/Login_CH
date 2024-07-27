@@ -72,5 +72,45 @@ router.post("/register", authController.register);
  */
 router.post("/login", authController.login);
 
-router.post("/logout", authenticateToken, authController.logout);
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: 유저 로그아웃
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *       500:
+ *         description: Server error
+ */
+router.post("/logout", authController.logout);
+
+/**
+ * @swagger
+ * /api/auth/kakao:
+ *   post:
+ *     summary: 카카오 로그인
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *             properties:
+ *               code:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Kakao login successful
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Server error
+ */
+router.post("/kakao", authController.kakaoLogin);
+router.post("/refresh", authController.refreshToken);
 export default router;

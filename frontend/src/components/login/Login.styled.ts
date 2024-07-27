@@ -9,33 +9,28 @@ export const LoginContainer = styled.div`
   justify-content: center;
   height: 100%;
   padding: 20px;
-  max-width: 480px; // 너비 증가
+  max-width: 480px;
   width: 100%;
   margin: 0 auto;
-`;
-
-export const Logo = styled.h1`
-  font-size: 32px;
-  margin-bottom: 20px;
-  color: #8d6e63; // 갈색 계열
-  font-weight: bold;
-`;
-
-export const LionImage = styled.img`
-  width: 120px;
-  height: 120px;
-  margin: 10px 0;
 `;
 
 export const Title = styled.h2`
   font-size: 24px;
   text-align: center;
   color: #8d6e63;
+  margin-bottom: 20px;
 `;
+
 export const StyledForm = styled.form`
   width: 100%;
-  height: 30%;
-  margin: 10px 0;
+  margin: 20px 0;
+`;
+
+export const StyledInput = styled(Input)`
+  margin-bottom: 10px;
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
 `;
 
 export const ErrorMessage = styled.span`
@@ -46,84 +41,61 @@ export const ErrorMessage = styled.span`
   display: block;
 `;
 
-export const SocialButtonText = styled.span`
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-`;
-
-export const StyledInput = styled(Input)`
-  margin-bottom: 10px;
-  width: 100%;
-  display: inline-block;
-  padding: 12px;
-  font-size: 16px;
-`;
-export const StyledLabel = styled.label`
-  display: inline-block;
-  margin-bottom: 4px;
-  color: #8d6e63;
-`;
-
 export const StyledButton = styled(Button)`
   width: 100%;
   margin-top: 10px;
   padding: 12px 0;
   font-size: 16px;
-  background-color: #ffa000; // 진한 노란색
+  background-color: #ffa000;
   color: #ffffff;
   border: none;
   &:hover {
-    background-color: #ff8f00; // 호버 시 더 진한 노란색
+    background-color: #ff8f00;
   }
 `;
 
-export const LoginEtcContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  gap: 10px;
-`;
-export const CheckboxContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #8d6e63;
-  width: 30%;
-`;
-
-export const LinkContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  text-align: center;
-  a {
-    color: #8d6e63;
-    text-decoration: none;
-    min-width: 60px;
-    text-align: center;
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-`;
 export const SocialLoginContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 15px;
+  gap: 10px;
+  width: 100%;
+  margin: 20px 0;
 `;
-export const SocialLoginText = styled.p`
-  color: #8d6e63;
-  font-size: 14px;
-  text-align: center;
+
+export const SocialButton = styled.button<{ $bgcolor: string }>`
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: ${(props) => props.$bgcolor};
+  color: ${(props) => (props.$bgcolor === "#03C75A" ? "white" : "#333")};
+  transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: ${(props) => {
+      const rgb = parseInt(props.$bgcolor.slice(1), 16);
+      const r = (rgb >> 16) & 0xff;
+      const g = (rgb >> 8) & 0xff;
+      const b = (rgb >> 0) & 0xff;
+      return `rgb(${Math.max(0, r - 15)}, ${Math.max(0, g - 15)}, ${Math.max(
+        0,
+        b - 15
+      )})`;
+    }};
+  }
 `;
+
+export const SocialButtonIcon = styled.img`
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
+`;
+
 export const SocialText = styled.div`
   display: flex;
   align-items: center;
@@ -137,22 +109,44 @@ export const SocialText = styled.div`
     padding: 0 10px;
   }
 `;
-export const SocialButtonContainer = styled.div`
+
+export const OtherLoginContainer = styled.div`
   display: flex;
-  justify-content: space-around;
-  margin-top: 15px;
-  width: 100%;
+  justify-content: center;
   gap: 20px;
+  margin-bottom: 20px;
 `;
 
-export const SocialButton = styled.button`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+export const OtherLoginButton = styled.button`
+  background: none;
   border: none;
   cursor: pointer;
-  font-weight: bold;
-  color: #ffffff;
+`;
+
+export const OtherLoginIcon = styled.img`
+  width: 32px;
+  height: 32px;
+`;
+
+export const RememberLoginContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 20px;
+`;
+
+export const SignUpLink = styled.p`
+  text-align: center;
+  font-size: 14px;
+  color: #8d6e63;
+  a {
+    color: #6d4c41;
+    font-weight: bold;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 `;
 export const VerticalDivider = styled.hr`
   display: inline-block;
