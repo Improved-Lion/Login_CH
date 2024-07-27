@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { styled } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
@@ -9,37 +9,39 @@ const Home = () => {
   const navigate = useNavigate();
   const { token, setToken, clearToken } = useAuthStore();
 
+  const fetchUserInfo = useCallback(async (currentToken: string) => {
+    try {
+      const response = await client.get("/users/me", {
+        headers: { Authorization: `Bearer ${currentToken}` },
+      });
+      setUserName(response.data.full_name || response.data.username);
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      if ((error as any).response && (error as any).response.status === 401) {
+        handleLogout();
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const checkAuth = async () => {
       const storedToken =
         sessionStorage.getItem("token") || localStorage.getItem("refreshToken");
       if (storedToken) {
         setToken(storedToken);
-        await fetchUserInfo();
+        await fetchUserInfo(storedToken);
       } else {
         navigate("/login");
       }
     };
 
     checkAuth();
-  }, []);
+  }, [setToken, fetchUserInfo, navigate]);
 
-  const fetchUserInfo = async () => {
-    try {
-      const response = await client.get("/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUserName(response.data.full_name || response.data.username);
-    } catch (error) {
-      console.error("Error fetching user info:", error);
-      if ((error as any).response && (error as any).response.status === 401) {
-        await handleLogout();
-      }
-    }
-  };
-  const handleLogout = async () => {
-    await clearToken();
+  const handleLogout = () => {
+    clearToken();
     localStorage.removeItem("refreshToken");
+    sessionStorage.removeItem("token");
     navigate("/login");
   };
 
@@ -52,6 +54,8 @@ const Home = () => {
 };
 
 export default Home;
+
+// 스타일 컴포넌트는 그대로 유지
 
 const HomeContainer = styled.div`
   display: flex;

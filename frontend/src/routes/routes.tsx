@@ -2,11 +2,10 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import RootLayout from "@/layouts/RootLayout";
 import ProtectedRoute from "@/routes/ProtectedRoute";
-
-const Loading = () => <div>Loading...</div>;
+import Spinner from "@/components/common/Spinner";
 
 const lazyLoad = (Component: React.LazyExoticComponent<() => JSX.Element>) => (
-  <Suspense fallback={<Loading />}>
+  <Suspense fallback={<Spinner />}>
     <Component />
   </Suspense>
 );
