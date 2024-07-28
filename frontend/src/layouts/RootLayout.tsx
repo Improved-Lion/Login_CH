@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import { Outlet } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
 
 const AppContainer = styled.div`
   display: flex;
@@ -23,6 +24,7 @@ const RootLayout = () => {
       <Main>
         <Outlet />
       </Main>
+      <Toaster />
     </AppContainer>
   );
 };
