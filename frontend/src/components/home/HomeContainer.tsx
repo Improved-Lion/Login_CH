@@ -10,7 +10,7 @@ const HomeContainer = () => {
   const [userName, setUserName] = useState("");
   const [userImage, setUserImage] = useState("");
   const navigate = useNavigate();
-  const { token, setToken, clearToken } = useAuthStore();
+  const { setToken, clearToken } = useAuthStore();
 
   const fetchUserInfo = useCallback(async (currentToken: string) => {
     try {
