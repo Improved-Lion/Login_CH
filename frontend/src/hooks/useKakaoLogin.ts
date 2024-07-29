@@ -4,8 +4,8 @@ import { useAuthStore } from "@/store/authStore";
 import client from "@/api/client";
 
 const useKakaoLogin = () => {
-  const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_APP_KEY;
-  const KAKAO_REDIRECT_URI = import.meta.env.VITE_REDIRECT_URL;
+  const KAKAO_APP_KEY = process.env.VITE_KAKAO_APP_KEY ?? "";
+  const KAKAO_REDIRECT_URI = process.env.VITE_REDIRECT_URL ?? "";
   const navigate = useNavigate();
   const { setToken, setUser } = useAuthStore();
   const [isKakaoSDKLoaded, setIsKakaoSDKLoaded] = useState(false);

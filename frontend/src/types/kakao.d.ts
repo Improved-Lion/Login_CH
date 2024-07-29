@@ -1,12 +1,11 @@
-// src/types/kakao.d.ts
-interface KakaoSDK {
+interface KakaoStatic {
   init: (appKey: string) => void;
   isInitialized: () => boolean;
   Auth: {
-    authorize: (options: { redirectUri: string; scope?: string }) => void;
+    authorize: (options: { redirectUri: string; scope: string }) => void;
   };
 }
 
 interface Window {
-  Kakao: KakaoSDK;
+  Kakao: KakaoStatic;
 }
