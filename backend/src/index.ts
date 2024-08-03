@@ -48,6 +48,4 @@ app.use("/api/auth", authRoutes);
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
   console.log(`Swagger UI available at http://localhost:${port}/api-docs`);
-  console.log("KAKAO_APP_KEY:", process.env.KAKAO_APP_KEY);
-  console.log("KAKAO_REDIRECT_URI:", process.env.KAKAO_REDIRECT_URI);
 });

@@ -184,6 +184,97 @@ export const kakaoLogin = async (req: Request, res: Response) => {
   }
 };
 
+export const naverLogin = async (req: Request, res: Response) => {
+  try {
+    const { code, state } = req.body;
+    if (!code || !state) {
+      return res.status(400).json({
+        ok: 0,
+        message: "Missing code or state",
+      });
+    }
+    // 네이버 액세스 토큰 얻기
+    const tokenResponse = await axios.post(
+      "https://nid.naver.com/oauth2.0/token",
+      null,
+      {
+        params: {
+          grant_type: "authorization_code",
+          client_id: process.env.NAVER_CLIENT_ID,
+          client_secret: process.env.NAVER_CLIENT_SECRET,
+          code,
+          state,
+        },
+      }
+    );
+
+    const { access_token } = tokenResponse.data;
+
+    if (!access_token) {
+      throw new Error("Failed to get access token from Naver");
+    }
+
+    // 네이버 사용자 정보 얻기
+    const userInfoResponse = await axios.get(
+      "https://openapi.naver.com/v1/nid/me",
+      {
+        headers: { Authorization: `Bearer ${access_token}` },
+      }
+    );
+
+    const { response: naverUserInfo } = userInfoResponse.data;
+    const { id: naverId, email, name, profile_image } = naverUserInfo;
+
+    // 사용자 정보로 DB에서 사용자 찾기 또는 새로 생성
+    let user = await userModel.getUserByEmail(email);
+    if (!user) {
+      const uniqueUsername = `${name}_${Math.random()
+        .toString(36)
+        .substr(2, 5)}`;
+      user = await userModel.createUser({
+        username: uniqueUsername,
+        email,
+        password: "",
+        full_name: name,
+        profile_image_url: profile_image,
+        provider: "naver",
+        provider_id: naverId,
+        login_type: "naver",
+        type: "user",
+      });
+    }
+
+    // JWT 토큰 생성
+    const { accessToken, refreshToken } = generateTokens(user.id!, user.type!);
+
+    // 클라이언트에 응답 보내기
+    res.json({
+      ok: 1,
+      item: {
+        _id: user.id,
+        email: user.email,
+        name: user.username,
+        type: user.type,
+        loginType: user.login_type,
+        phone: user.phone,
+        address: user.address,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        token: {
+          accessToken,
+          refreshToken,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Naver login error:", error);
+    res.status(500).json({
+      ok: 0,
+      message: "서버 에러가 발생했습니다.",
+      error,
+    });
+  }
+};
 export const refreshToken = async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
 

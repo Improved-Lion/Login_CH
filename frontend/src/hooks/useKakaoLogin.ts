@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import client from "@/api/client";
 
 const useKakaoLogin = () => {
-  const KAKAO_APP_KEY = process.env.VITE_KAKAO_APP_KEY ?? "";
-  const KAKAO_REDIRECT_URI = process.env.VITE_REDIRECT_URL ?? "";
+  const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_APP_KEY ?? "";
+  const KAKAO_REDIRECT_URI = import.meta.env.VITE_REDIRECT_URL ?? "";
   const navigate = useNavigate();
   const { setToken, setUser } = useAuthStore();
   const [isKakaoSDKLoaded, setIsKakaoSDKLoaded] = useState(false);
@@ -33,8 +33,8 @@ const useKakaoLogin = () => {
     }
   }, [KAKAO_APP_KEY]);
 
-  useEffect(() => {
-    const handleKakaoCallback = async (code: string) => {
+  const handleKakaoCallback = useCallback(
+    async (code: string) => {
       try {
         const response = await client.post("/auth/kakao", { code });
         if (response.data.ok === 1 && response.data.item) {
@@ -51,15 +51,9 @@ const useKakaoLogin = () => {
         console.error("Kakao login error:", error);
         alert("로그인에 실패했습니다. 다시 시도해주세요.");
       }
-    };
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get("code");
-    if (code) {
-      handleKakaoCallback(code);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [navigate, setToken, setUser]);
+    },
+    [navigate, setToken, setUser]
+  );
 
   const handleKakaoLogin = () => {
     if (isKakaoSDKLoaded && window.Kakao) {
@@ -80,7 +74,7 @@ const useKakaoLogin = () => {
     }
   };
 
-  return handleKakaoLogin;
+  return { handleKakaoLogin, handleKakaoCallback };
 };
 
 export default useKakaoLogin;

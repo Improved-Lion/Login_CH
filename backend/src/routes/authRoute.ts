@@ -86,6 +86,8 @@ router.post("/login", authController.login);
  */
 router.post("/logout", authController.logout);
 
+router.post("/refresh", authController.refreshToken);
+
 /**
  * @swagger
  * /api/auth/kakao:
@@ -112,5 +114,39 @@ router.post("/logout", authController.logout);
  *         description: Server error
  */
 router.post("/kakao", authController.kakaoLogin);
-router.post("/refresh", authController.refreshToken);
+
+// src/routes/authRoutes.ts
+
+// ... (기존 import 문 유지)
+
+/**
+ * @swagger
+ * /api/auth/naver:
+ *   post:
+ *     summary: 네이버 로그인
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *               - state
+ *             properties:
+ *               code:
+ *                 type: string
+ *               state:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Naver login successful
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Server error
+ */
+router.post("/naver", authController.naverLogin);
+
 export default router;
