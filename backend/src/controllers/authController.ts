@@ -4,6 +4,7 @@ import * as userModel from "../models/userModel";
 import bcrypt from "bcrypt";
 import axios, { AxiosError } from "axios";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 const JWT_REFRESH_SECRET =
@@ -275,6 +276,96 @@ export const naverLogin = async (req: Request, res: Response) => {
     });
   }
 };
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+export const googleLogin = async (req: Request, res: Response) => {
+  try {
+    const { credential } = req.body;
+
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      throw new Error("Failed to get Google user info");
+    }
+
+    const { sub: googleId, email, name, picture } = payload;
+
+    if (!email) {
+      throw new Error("Email not provided by Google");
+    }
+
+    // 사용자 정보로 DB에서 사용자 찾기 또는 새로 생성
+    let user = await userModel.getUserByEmail(email);
+
+    if (user) {
+      // 기존 사용자의 경우 login_type과 profile_image_url 업데이트
+      user = await userModel.updateUser(user.id!, {
+        login_type: "google",
+        profile_image_url: picture,
+        provider: "google",
+        provider_id: googleId,
+      });
+
+      if (!user) {
+        throw new Error("Failed to update existing user");
+      }
+    } else {
+      // 새 사용자 생성
+      user = await userModel.createUser({
+        username: name || email.split("@")[0], // name이 없을 경우 이메일의 앞부분을 사용
+        email: email,
+        password: "", // 소셜 로그인 사용자는 비밀번호 없음
+        full_name: name || "",
+        profile_image_url: picture || "",
+        provider: "google",
+        provider_id: googleId,
+        login_type: "google",
+        type: "user",
+      });
+
+      if (!user) {
+        throw new Error("Failed to create new user");
+      }
+    }
+
+    // JWT 토큰 생성
+    const { accessToken, refreshToken } = generateTokens(user.id!, user.type!);
+
+    // 클라이언트에 응답 보내기
+    res.json({
+      ok: 1,
+      item: {
+        _id: user.id,
+        email: user.email,
+        name: user.username,
+        type: user.type,
+        loginType: user.login_type,
+        phone: user.phone,
+        address: user.address,
+        profile_image_url: user.profile_image_url,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        token: {
+          accessToken,
+          refreshToken,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Google login error:", error);
+    res.status(500).json({
+      ok: 0,
+      message: "서버 에러가 발생했습니다.",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
 export const refreshToken = async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
 

@@ -149,4 +149,60 @@ router.post("/kakao", authController.kakaoLogin);
  */
 router.post("/naver", authController.naverLogin);
 
+/**
+ * @swagger
+ * /api/auth/google:
+ *   post:
+ *     summary: 구글 로그인
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - credential
+ *             properties:
+ *               credential:
+ *                 type: string
+ *                 description: Google에서 제공하는 ID 토큰
+ *     responses:
+ *       200:
+ *         description: Google login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: number
+ *                   example: 1
+ *                 item:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     type:
+ *                       type: string
+ *                     loginType:
+ *                       type: string
+ *                     token:
+ *                       type: object
+ *                       properties:
+ *                         accessToken:
+ *                           type: string
+ *                         refreshToken:
+ *                           type: string
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Server error
+ */
+router.post("/google", authController.googleLogin);
+
 export default router;
