@@ -4,6 +4,7 @@ import swaggerJsdoc from "swagger-jsdoc";
 import userRoutes from "./routes/userRoute";
 import authRoutes from "./routes/authRoute";
 import cors from "cors";
+import path from "path";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -44,6 +45,7 @@ if (!JWT_SECRET) {
 // 라우트 설정
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

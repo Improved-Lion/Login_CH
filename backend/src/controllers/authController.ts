@@ -4,17 +4,86 @@ import * as userModel from "../models/userModel";
 import bcrypt from "bcrypt";
 import axios, { AxiosError } from "axios";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { OAuth2Client } from "google-auth-library";
-
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || "your_refresh_secret";
+
+// 'uploads' 디렉토리의 절대 경로 설정
+const uploadDir = path.join(__dirname, "..", "uploads");
+
+// 'uploads' 디렉토리가 없으면 생성
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+    );
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB 제한
+});
+
 export const register = async (req: Request, res: Response) => {
   try {
-    const user = await userModel.createUser(req.body);
-    res.status(201).json(user);
+    upload.single("profile_image")(req, res, async (err) => {
+      if (err instanceof multer.MulterError) {
+        console.error("Multer error:", err);
+        return res
+          .status(400)
+          .json({ message: "File upload error: " + err.message });
+      } else if (err) {
+        console.error("Unknown error during file upload:", err);
+        return res.status(500).json({
+          message: "Unknown error during file upload: " + err.message,
+        });
+      }
+
+      try {
+        const { password, ...otherData } = req.body;
+
+        // 비밀번호 해싱
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        const userData = {
+          ...otherData,
+          password: hashedPassword, // 해싱된 비밀번호 사용
+          profile_image_url: req.file ? `/uploads/${req.file.filename}` : null,
+          login_type: "email",
+        };
+
+        const user = await userModel.createUser(userData);
+
+        // 비밀번호 필드를 제외하고 응답
+        const { password: _, ...userWithoutPassword } = user;
+        res.status(201).json(userWithoutPassword);
+      } catch (error) {
+        console.error("Error creating user:", error);
+        res.status(500).json({
+          message: "Error creating user: " + (error as Error).message,
+        });
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error registering user" });
+    console.error("Error in register function:", error);
+    res
+      .status(500)
+      .json({ message: "Error registering user: " + (error as Error).message });
   }
 };
 

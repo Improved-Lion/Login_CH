@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useState } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -25,6 +25,7 @@ const schema = z
       ),
     confirmPassword: z.string(),
     full_name: z.string().optional(),
+    profile_image: z.instanceof(File).optional(),
     agreeTerms: z.boolean().refine((val) => val === true, {
       message: "이용약관에 동의해주세요",
     }),
@@ -35,6 +36,7 @@ const schema = z
   });
 
 type SignUpFormData = z.infer<typeof schema>;
+
 interface User {
   id?: number;
   username: string;
@@ -51,15 +53,23 @@ type SignUpResponse = {
   token: string;
 };
 
-const signUpUser = async (
-  data: Omit<SignUpFormData, "confirmPassword" | "agreeTerms">
-): Promise<SignUpResponse> => {
-  console.log("signUpUser called with data:", data);
-  const response = await client.post<SignUpResponse>("/auth/register", data);
+const signUpUser = async (formData: FormData): Promise<SignUpResponse> => {
+  console.log("signUpUser called with data:", formData);
+  const response = await client.post<SignUpResponse>(
+    "/auth/register",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
   return response.data;
 };
-const SignUp = () => {
+
+const SignUp: React.FC = () => {
   const navigate = useNavigate();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -83,41 +93,60 @@ const SignUp = () => {
     onError: (error: AxiosError) => {
       console.error("SignUp error:", error);
       if (error.response) {
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
-        alert(`SignUp failed: ${JSON.stringify(error.response.data)}`);
+        alert(`회원가입 실패: ${JSON.stringify(error.response.data)}`);
       } else if (error.request) {
-        console.error("No response received:", error.request);
-        alert("No response received from server");
+        alert("서버로부터 응답이 없습니다.");
       } else {
-        console.error("Error:", error.message);
-        alert(`Error: ${error.message}`);
+        alert(`오류: ${error.message}`);
       }
     },
   });
 
   const onSubmit = (data: SignUpFormData) => {
     console.log("onSubmit called with data:", data);
-    const { confirmPassword, agreeTerms, ...signUpData } = data;
-    signUpMutation.mutate(signUpData);
-  };
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (key !== "confirmPassword" && key !== "agreeTerms") {
+        if (key === "profile_image" && value instanceof File) {
+          formData.append(key, value, value.name);
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, value.toString());
+        }
+      }
+    });
 
+    // FormData의 내용을 로그로 출력
+    Array.from(formData.entries()).forEach(([key, value]) => {
+      if (value instanceof File) {
+        console.log(key, value.name, value.type, value.size);
+      } else {
+        console.log(key, value);
+      }
+    });
+
+    signUpMutation.mutate(formData);
+  };
   const onError: SubmitErrorHandler<SignUpFormData> = (errors) => {
     console.error("Form validation failed:", errors);
   };
+  const [selectedFileName, setSelectedFileName] =
+    useState<string>("선택된 파일 없음");
 
-  useEffect(() => {
-    const subscription = watch((value, { name, type }) =>
-      console.log("Form value changed:", value, name, type)
-    );
-    return () => subscription.unsubscribe();
-  }, [watch]);
-
-  useEffect(() => {
-    if (Object.keys(errors).length > 0) {
-      console.log("Form errors:", errors);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setValue("profile_image", file);
+      setSelectedFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setSelectedFileName("선택된 파일 없음");
+      setImagePreview(null);
     }
-  }, [errors]);
+  };
 
   return (
     <S.SignUpContainer>
@@ -204,6 +233,24 @@ const SignUp = () => {
           <S.ErrorMessage>{errors.full_name.message}</S.ErrorMessage>
         )}
 
+        <S.LabelWrapper>
+          <S.StyledLabel htmlFor="profile_image">프로필 이미지</S.StyledLabel>
+          <S.LabelDescription>(선택)</S.LabelDescription>
+        </S.LabelWrapper>
+        <S.FileInputWrapper>
+          <S.FileInputLabel htmlFor="profile_image">파일 선택</S.FileInputLabel>
+          <S.HiddenFileInput
+            id="profile_image"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+          />
+          <S.SelectedFileName>{selectedFileName}</S.SelectedFileName>
+        </S.FileInputWrapper>
+        {imagePreview && (
+          <S.ImagePreview src={imagePreview} alt="Profile preview" />
+        )}
+
         <S.CheckboxContainer>
           <Checkbox
             id="agreeTerms"
@@ -225,7 +272,6 @@ const SignUp = () => {
         <S.StyledButton
           type="submit"
           disabled={isSubmitting || signUpMutation.status === "pending"}
-          onClick={() => console.log("SignUp button clicked")}
         >
           {isSubmitting || signUpMutation.status === "pending"
             ? "가입 중..."

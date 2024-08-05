@@ -30,7 +30,7 @@ export const createUser = async (user: User): Promise<User> => {
   const values = [
     user.username,
     user.email,
-    user.password,
+    user.password, // 이미 해싱된 비밀번호
     user.full_name || null,
     user.profile_image_url || null,
     user.provider || "local",
@@ -41,7 +41,6 @@ export const createUser = async (user: User): Promise<User> => {
   const result = await pool.query(query, values);
   return result.rows[0];
 };
-
 export const getUserByEmail = async (email: string): Promise<User | null> => {
   const query = "SELECT * FROM users WHERE email = $1";
   const result = await pool.query(query, [email]);

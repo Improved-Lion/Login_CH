@@ -18,7 +18,7 @@ export const SignUpContainer = styled.div`
 
 export const Logo = styled.h1`
   font-size: 32px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   color: #8d6e63;
   font-weight: bold;
 `;
@@ -27,7 +27,7 @@ export const Title = styled.h2`
   font-size: 24px;
   text-align: center;
   color: #8d6e63;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 `;
 
 export const StyledForm = styled.form`
@@ -44,7 +44,7 @@ export const ErrorMessage = styled.span`
 `;
 
 export const StyledInput = styled(Input)`
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   width: 100%;
   display: inline-block;
   padding: 12px;
@@ -69,7 +69,7 @@ export const StyledLabel = styled.label`
 
 export const StyledButton = styled(Button)`
   width: 100%;
-  margin-top: 20px;
+  margin-top: 10px;
   padding: 12px 0;
   font-size: 16px;
   background-color: #ffa000;
@@ -89,7 +89,7 @@ export const CheckboxContainer = styled.div`
 `;
 
 export const LoginPrompt = styled.p`
-  margin-top: 20px;
+  margin-top: 10px;
   text-align: center;
   font-size: 14px;
   color: #8d6e63;
@@ -105,4 +105,44 @@ export const LoginLink = styled(Link)`
     color: #ff9100;
     text-decoration: underline;
   }
+`;
+export const FileInputWrapper = styled.div`
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+`;
+
+export const FileInputLabel = styled.label`
+  border: 1px solid #ccc;
+  display: inline-block;
+  padding: 6px 12px;
+  cursor: pointer;
+  background-color: #f8f9fa;
+  color: #495057;
+  border-radius: 4px;
+  font-size: 14px;
+
+  &:hover {
+    background-color: #e9ecef;
+  }
+`;
+
+export const HiddenFileInput = styled.input`
+  font-size: 100px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+`;
+
+export const SelectedFileName = styled.span`
+  margin-left: 10px;
+  font-size: 14px;
+`;
+export const ImagePreview = styled.img`
+  max-width: 100%;
+  max-height: 200px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  border-radius: 4px;
 `;
