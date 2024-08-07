@@ -1,6 +1,8 @@
 import styled from "styled-components";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import ResetPassword from "../../pages/ResetPassword";
+import { Link } from "react-router-dom";
 
 export const LoginContainer = styled.div`
   display: flex;
@@ -127,12 +129,25 @@ export const OtherLoginIcon = styled.img`
   width: 32px;
   height: 32px;
 `;
-
+export const EtcContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+export const ResetPasswordLink = styled(Link)`
+  color: #8d6e63;
+  font-size: 14px;
+  text-decoration: none;
+  &:hover {
+    font-weight: bold;
+    color: #6d4c41;
+  }
+`;
 export const RememberLoginContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 5px;
-  margin-bottom: 20px;
 `;
 
 export const SignUpLink = styled.p`

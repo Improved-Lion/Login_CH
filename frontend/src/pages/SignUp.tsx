@@ -67,7 +67,7 @@ const signUpUser = async (formData: FormData): Promise<SignUpResponse> => {
   return response.data;
 };
 
-const SignUp: React.FC = () => {
+const SignUp = () => {
   const navigate = useNavigate();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const {

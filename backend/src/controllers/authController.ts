@@ -106,19 +106,14 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // JWT 토큰 생성
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { userEmail: user.email, type: user.type },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
     res.json({
       message: "Login successful",
-      //user: {
-      //  id: user.id,
-      //  username: user.username,
-      //  email: user.email,
-      //  full_name: user.full_name,
-      //  profile_image_url: user.profile_image_url,
-      //},
       token,
     });
   } catch (error) {

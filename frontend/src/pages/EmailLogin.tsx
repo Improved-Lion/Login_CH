@@ -125,18 +125,23 @@ const EmailLogin = () => {
           <S.ErrorMessage>{errors.password.message}</S.ErrorMessage>
         )}
 
-        <S.RememberLoginContainer>
-          <Checkbox
-            id="remember"
-            {...register("rememberMe")}
-            onCheckedChange={(checked) => {
-              if (typeof checked === "boolean") {
-                setValue("rememberMe", checked);
-              }
-            }}
-          />
-          <StyledLabel htmlFor="rememberLogin">로그인 상태 유지</StyledLabel>
-        </S.RememberLoginContainer>
+        <S.EtcContainer>
+          <S.RememberLoginContainer>
+            <Checkbox
+              id="remember"
+              {...register("rememberMe")}
+              onCheckedChange={(checked) => {
+                if (typeof checked === "boolean") {
+                  setValue("rememberMe", checked);
+                }
+              }}
+            />
+            <StyledLabel htmlFor="rememberLogin">로그인 상태 유지</StyledLabel>
+          </S.RememberLoginContainer>
+          <S.ResetPasswordLink to="/forgotPassword">
+            비밀번호 찾기
+          </S.ResetPasswordLink>
+        </S.EtcContainer>
 
         <S.StyledButton
           type="submit"

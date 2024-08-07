@@ -7,24 +7,40 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 export const getUserInfo = async (req: Request, res: Response) => {
   try {
-    // JWT 토큰에서 추출한 사용자 ID를 사용합니다.
-    const userId = (req as any).userId; // 인증 미들웨어에서 설정된 userId를 사용
-    if (!userId) {
+    const userEmail = (req as any).userEmail;
+    if (!userEmail) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const user = await userModel.getUserById(userId);
+    const user = await userModel.getUserByEmail(userEmail);
 
     if (user) {
-      // 민감한 정보를 제외하고 필요한 정보만 반환
-      const { id, username, email, full_name, profile_image_url } = user;
-      res.json({ id, username, email, full_name, profile_image_url });
+      const {
+        id,
+        username,
+        email,
+        full_name,
+        profile_image_url,
+        type,
+        login_type,
+      } = user;
+      res.json({
+        id,
+        username,
+        email,
+        full_name,
+        profile_image_url,
+        type,
+        login_type,
+      });
     } else {
       res.status(404).json({ message: "User not found" });
     }
   } catch (error) {
     console.error("Error in getUserInfo:", error);
-    res.status(500).json({ message: "Server error" });
+    res
+      .status(500)
+      .json({ message: "Server error", error: (error as Error).message });
   }
 };
 

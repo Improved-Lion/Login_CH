@@ -74,15 +74,16 @@ export const authenticateToken = (
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (token == null) return res.sendStatus(401);
+  if (token == null)
+    return res.status(401).json({ message: "No token provided" });
 
-  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+  jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
     if (err) {
       console.error("Token verification error:", err);
-      return res.sendStatus(403);
+      return res.status(403).json({ message: "Invalid token" });
     }
-    (req as any).userId = user._id; // _id로 변경
-    (req as any).userType = user.type; // userType 추가
+    (req as any).userEmail = decoded.userEmail;
+    (req as any).userType = decoded.type;
     next();
   });
 };
