@@ -19,7 +19,11 @@ const schema = z.object({
 });
 
 type LoginFormData = z.infer<typeof schema>;
-type LoginResponse = { message: string; token: string };
+type LoginResponse = {
+  message: string;
+  accessToken: string;
+  refreshToken: string;
+};
 
 const loginUser = async (
   data: Omit<LoginFormData, "rememberMe">
@@ -49,16 +53,15 @@ const EmailLogin = () => {
     mutationFn: loginUser,
     onSuccess: (data) => {
       console.log("Login successful:", data);
-      const { token } = data;
-      const rememberMe = watch("rememberMe");
+      const { accessToken, refreshToken } = data;
 
-      if (rememberMe) {
-        localStorage.setItem("token", token);
-      } else {
-        sessionStorage.setItem("token", token);
-      }
+      // accessToken은 항상 sessionStorage에 저장
+      sessionStorage.setItem("token", accessToken);
 
-      setToken(token);
+      // refreshToken은 항상 localStorage에 저장
+      localStorage.setItem("refreshToken", refreshToken);
+
+      setToken(accessToken);
       navigate("/");
     },
     onError: (error: AxiosError) => {

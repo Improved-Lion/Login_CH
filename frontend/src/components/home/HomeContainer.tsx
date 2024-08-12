@@ -5,35 +5,49 @@ import client from "@/api/client";
 import UserInfo from "./UserInfo";
 import LogoutButton from "./LogoutButton";
 import { HomeWrapper } from "./Home.styled";
+import axios from "axios";
 
 const HomeContainer = () => {
   const [userName, setUserName] = useState("");
   const [userImage, setUserImage] = useState("");
   const navigate = useNavigate();
-  const { setToken, clearToken } = useAuthStore();
+  const { token, setToken, setUser, logout } = useAuthStore();
 
-  const fetchUserInfo = useCallback(async (currentToken: string) => {
+  const fetchUserInfo = useCallback(async () => {
+    if (!token) return;
     try {
-      const response = await client.get("/users/me", {
-        headers: { Authorization: `Bearer ${currentToken}` },
-      });
-      setUserName(response.data.full_name || response.data.username);
-      setUserImage(response.data.profile_image_url || "");
+      const response = await client.get("/users/me");
+      const userData = response.data;
+      setUser(userData);
+      setUserName(userData.full_name || userData.username);
+      setUserImage(userData.profile_image_url || "");
     } catch (error) {
       console.error("Error fetching user info:", error);
-      if ((error as any).response && (error as any).response.status === 401) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
         handleLogout();
       }
     }
-  }, []);
+  }, [token, setUser]);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const storedToken =
-        sessionStorage.getItem("token") || localStorage.getItem("refreshToken");
-      if (storedToken) {
-        setToken(storedToken);
-        await fetchUserInfo(storedToken);
+      const accessToken = sessionStorage.getItem("token");
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      if (accessToken) {
+        setToken(accessToken);
+        await fetchUserInfo();
+      } else if (refreshToken) {
+        try {
+          const response = await client.post("/auth/refresh", { refreshToken });
+          const newAccessToken = response.data.accessToken;
+          sessionStorage.setItem("token", newAccessToken);
+          setToken(newAccessToken);
+          await fetchUserInfo();
+        } catch (error) {
+          console.error("Error refreshing token:", error);
+          navigate("/login");
+        }
       } else {
         navigate("/login");
       }
@@ -42,12 +56,10 @@ const HomeContainer = () => {
     checkAuth();
   }, [setToken, fetchUserInfo, navigate]);
 
-  const handleLogout = () => {
-    clearToken();
-    localStorage.removeItem("refreshToken");
-    sessionStorage.removeItem("token");
+  const handleLogout = useCallback(() => {
+    logout(); // useAuthStore의 logout 함수 사용
     navigate("/login");
-  };
+  }, [logout, navigate]);
 
   return (
     <HomeWrapper>

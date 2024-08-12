@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import client from "@/api/client";
 import { useCallback } from "react";
+import axios from "axios";
 
 const useNaverLogin = () => {
   const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID ?? "";
@@ -31,6 +32,7 @@ const useNaverLogin = () => {
 
       try {
         const response = await client.post("/auth/naver", { code, state });
+        console.log("Naver login response:", response.data); // 디버깅용
         if (response.data.ok === 1 && response.data.item) {
           const { token, ...userInfo } = response.data.item;
           sessionStorage.setItem("token", token.accessToken);
@@ -43,6 +45,10 @@ const useNaverLogin = () => {
         }
       } catch (error) {
         console.error("Naver login error:", error);
+        if (axios.isAxiosError(error)) {
+          console.error("Response data:", error.response?.data);
+          console.error("Response status:", error.response?.status);
+        }
         alert("로그인에 실패했습니다. 다시 시도해주세요.");
       } finally {
         localStorage.removeItem("naverState");

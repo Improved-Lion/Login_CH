@@ -65,7 +65,6 @@ export const registerUser = async (req: Request, res: Response) => {
 };
 
 // JWT 토큰 검증 미들웨어
-
 export const authenticateToken = (
   req: Request,
   res: Response,
@@ -74,15 +73,15 @@ export const authenticateToken = (
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (token == null)
-    return res.status(401).json({ message: "No token provided" });
+  if (!token) return res.status(401).json({ message: "No token provided" });
 
-  jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
+  jwt.verify(token, process.env.JWT_SECRET!, (err: any, decoded: any) => {
     if (err) {
       console.error("Token verification error:", err);
       return res.status(403).json({ message: "Invalid token" });
     }
-    (req as any).userEmail = decoded.userEmail;
+    (req as any).userId = decoded.userId;
+    (req as any).userEmail = decoded.email;
     (req as any).userType = decoded.type;
     next();
   });

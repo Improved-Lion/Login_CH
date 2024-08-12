@@ -10,7 +10,7 @@ const SocialLoginButtons = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleCallback = useCallback(() => {
+  useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const code = searchParams.get("code");
     const state = searchParams.get("state");
@@ -26,11 +26,13 @@ const SocialLoginButtons = () => {
       // URL 파라미터 제거
       navigate(location.pathname, { replace: true });
     }
-  }, [location.search, handleNaverCallback, handleKakaoCallback, navigate]);
-
-  useEffect(() => {
-    handleCallback();
-  }, [handleCallback]);
+  }, [
+    location.search,
+    location.pathname,
+    navigate,
+    handleNaverCallback,
+    handleKakaoCallback,
+  ]);
 
   return (
     <S.SocialLoginContainer>

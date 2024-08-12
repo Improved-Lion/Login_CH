@@ -9,7 +9,12 @@ import path from "path";
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // 클라이언트 URL
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Swagger 설정
