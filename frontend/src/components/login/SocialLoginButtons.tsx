@@ -1,42 +1,19 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import * as S from "./Login.styled";
 import useKakaoLogin from "@/hooks/useKakaoLogin";
 import useNaverLogin from "@/hooks/useNaverLogin";
 
 const SocialLoginButtons = () => {
-  const { handleKakaoLogin, handleKakaoCallback } = useKakaoLogin();
-  const { handleNaverLogin, handleNaverCallback } = useNaverLogin();
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const code = searchParams.get("code");
-    const state = searchParams.get("state");
-
-    if (code) {
-      if (state) {
-        // Naver Login
-        handleNaverCallback(code, state);
-      } else {
-        // Kakao Login
-        handleKakaoCallback(code);
-      }
-      // URL 파라미터 제거
-      navigate(location.pathname, { replace: true });
-    }
-  }, [
-    location.search,
-    location.pathname,
-    navigate,
-    handleNaverCallback,
-    handleKakaoCallback,
-  ]);
+  const { handleKakaoLogin, isKakaoInitialized } = useKakaoLogin();
+  const { handleNaverLogin } = useNaverLogin();
 
   return (
     <S.SocialLoginContainer>
-      <S.SocialButton $bgcolor="#FEE500" onClick={handleKakaoLogin}>
+      <S.SocialButton
+        $bgcolor="#FEE500"
+        onClick={handleKakaoLogin}
+        disabled={!isKakaoInitialized}
+      >
         <S.SocialButtonIcon src="/kakao.webp" alt="Kakao" />
         Kakao로 로그인
       </S.SocialButton>

@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import client from "@/api/client";
@@ -7,7 +7,7 @@ const useGoogleLogin = () => {
   const navigate = useNavigate();
   const { setToken, setUser } = useAuthStore();
 
-  const handleGoogleLogin = useCallback(
+  const handleGoogleLoginLogic = useCallback(
     async (response: any) => {
       try {
         console.log("Google login response:", response);
@@ -23,7 +23,7 @@ const useGoogleLogin = () => {
           setToken(token.accessToken);
           setUser({
             ...userInfo,
-            profileImageUrl: userInfo.profile_image_url, // 프로필 이미지 URL 설정
+            profileImageUrl: userInfo.profile_image_url,
           });
           navigate("/");
         } else {
@@ -36,6 +36,46 @@ const useGoogleLogin = () => {
     },
     [navigate, setToken, setUser]
   );
+
+  useEffect(() => {
+    const loadGoogleScript = () => {
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+
+      script.onload = () => {
+        if (window.google && window.google.accounts) {
+          window.google.accounts.id.initialize({
+            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+            callback: handleGoogleLoginLogic,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+          });
+        }
+      };
+    };
+
+    loadGoogleScript();
+  }, [handleGoogleLoginLogic]);
+
+  const handleGoogleLogin = useCallback(() => {
+    if (window.google && window.google.accounts) {
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          console.log("Google One Tap is not displayed or was skipped.");
+          console.log(
+            "Reason:",
+            notification.getNotDisplayedReason() ||
+              notification.getSkippedReason()
+          );
+        }
+      });
+    } else {
+      console.error("Google API is not loaded");
+    }
+  }, []);
 
   return { handleGoogleLogin };
 };

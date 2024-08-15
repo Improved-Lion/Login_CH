@@ -6,7 +6,7 @@ import axios from "axios";
 
 const useNaverLogin = () => {
   const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID ?? "";
-  const NAVER_REDIRECT_URI = import.meta.env.VITE_REDIRECT_URL ?? "";
+  const NAVER_REDIRECT_URI = import.meta.env.VITE_NAVER_REDIRECT_URL ?? "";
   const navigate = useNavigate();
   const { setToken, setUser } = useAuthStore();
 

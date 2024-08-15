@@ -69,13 +69,31 @@ const EmailLogin = () => {
       if (error.response) {
         console.error("Response data:", error.response.data);
         console.error("Response status:", error.response.status);
-        alert(`Login failed: ${JSON.stringify(error.response.data)}`);
+
+        const errorData = error.response.data as {
+          message: string;
+          errorType: string;
+        };
+
+        switch (errorData.errorType) {
+          case "USER_NOT_FOUND":
+            alert("등록되지 않은 이메일입니다. 회원가입을 진행해주세요.");
+            break;
+          case "INVALID_PASSWORD":
+            alert("비밀번호가 올바르지 않습니다. 다시 확인해주세요.");
+            break;
+          case "SERVER_ERROR":
+            alert("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            break;
+          default:
+            alert(`로그인에 실패했습니다: ${errorData.message}`);
+        }
       } else if (error.request) {
         console.error("No response received:", error.request);
-        alert("No response received from server");
+        alert("서버로부터 응답을 받지 못했습니다. 인터넷 연결을 확인해주세요.");
       } else {
         console.error("Error:", error.message);
-        alert(`Error: ${error.message}`);
+        alert(`오류가 발생했습니다: ${error.message}`);
       }
     },
   });

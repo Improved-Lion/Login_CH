@@ -72,20 +72,6 @@ router.post("/register", authController.register);
  */
 router.post("/login", authController.login);
 
-/**
- * @swagger
- * /api/auth/logout:
- *   post:
- *     summary: 유저 로그아웃
- *     tags: [Auth]
- *     responses:
- *       200:
- *         description: Logout successful
- *       500:
- *         description: Server error
- */
-router.post("/logout", authController.logout);
-
 router.post("/refresh", authController.refreshToken);
 
 /**
@@ -116,8 +102,6 @@ router.post("/refresh", authController.refreshToken);
 router.post("/kakao", authController.kakaoLogin);
 
 // src/routes/authRoutes.ts
-
-// ... (기존 import 문 유지)
 
 /**
  * @swagger
@@ -204,5 +188,75 @@ router.post("/naver", authController.naverLogin);
  *         description: Server error
  */
 router.post("/google", authController.googleLogin);
+
+/**
+ * @swagger
+ * /api/auth/github:
+ *   post:
+ *     summary: GitHub 로그인
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: GitHub에서 제공하는 인증 코드
+ *     responses:
+ *       200:
+ *         description: GitHub login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: number
+ *                   example: 1
+ *                 item:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     type:
+ *                       type: string
+ *                     loginType:
+ *                       type: string
+ *                     token:
+ *                       type: object
+ *                       properties:
+ *                         accessToken:
+ *                           type: string
+ *                         refreshToken:
+ *                           type: string
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Server error
+ */
+router.post("/github", authController.githubLogin);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: 유저 로그아웃
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *       500:
+ *         description: Server error
+ */
+router.post("/logout", authController.logout);
 
 export default router;

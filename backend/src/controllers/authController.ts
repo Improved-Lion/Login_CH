@@ -1,13 +1,15 @@
-// src/controllers/authController.ts
 import { Request, Response } from "express";
 import * as userModel from "../models/userModel";
-import bcrypt from "bcrypt";
-import axios, { AxiosError } from "axios";
-import jwt, { JwtPayload } from "jsonwebtoken";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+import axios from "axios";
+import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import path from "path";
+import bcrypt from "bcrypt";
+import fs from "fs";
+import multer from "multer";
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || "your_refresh_secret";
@@ -95,14 +97,18 @@ export const login = async (req: Request, res: Response) => {
     const user = await userModel.getUserByEmail(email);
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res
+        .status(401)
+        .json({ message: "User not found", errorType: "USER_NOT_FOUND" });
     }
 
     // 비밀번호 비교
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res
+        .status(401)
+        .json({ message: "Invalid password", errorType: "INVALID_PASSWORD" });
     }
 
     // JWT 토큰 생성
@@ -123,13 +129,15 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "Server error" });
+    res
+      .status(500)
+      .json({ message: "Server error", errorType: "SERVER_ERROR" });
   }
 };
 
-const generateTokens = (userId: number, userType: string) => {
+const generateTokens = (userId: number, email: string, userType: string) => {
   const accessToken = jwt.sign(
-    { userId, type: userType },
+    { userId, email, type: userType },
     process.env.JWT_SECRET!,
     {
       expiresIn: "1h",
@@ -142,6 +150,208 @@ const generateTokens = (userId: number, userType: string) => {
   });
   return { accessToken, refreshToken };
 };
+
+const createOrUpdateUser = async (userData: any) => {
+  let user = await userModel.getUserByEmail(userData.email);
+  if (user) {
+    user = await userModel.updateUser(user.id!, userData);
+  } else {
+    user = await userModel.createUser(userData);
+  }
+  return user;
+};
+
+const handleSocialLogin = async (
+  req: Request,
+  res: Response,
+  socialLoginLogic: Function
+) => {
+  try {
+    const user = await socialLoginLogic(req.body);
+    const { accessToken, refreshToken } = generateTokens(
+      user.id!,
+      user.email!,
+      user.type!
+    );
+
+    res.json({
+      ok: 1,
+      item: {
+        _id: user.id,
+        email: user.email,
+        name: user.username,
+        type: user.type,
+        loginType: user.login_type,
+        phone: user.phone,
+        address: user.address,
+        profile_image_url: user.profile_image_url,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        token: { accessToken, refreshToken },
+      },
+    });
+  } catch (error) {
+    console.error(`${req.path} login error:`, error);
+    res.status(500).json({
+      ok: 0,
+      message: "서버 에러가 발생했습니다.",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+export const kakaoLogin = (req: Request, res: Response) =>
+  handleSocialLogin(req, res, async ({ code }: { code: string }) => {
+    const tokenResponse = await axios.post(
+      "https://kauth.kakao.com/oauth/token",
+      null,
+      {
+        params: {
+          grant_type: "authorization_code",
+          client_id: process.env.KAKAO_APP_KEY,
+          redirect_uri: process.env.KAKAO_REDIRECT_URI,
+          code,
+        },
+      }
+    );
+
+    const { access_token } = tokenResponse.data;
+    const userInfoResponse = await axios.get(
+      "https://kapi.kakao.com/v2/user/me",
+      { headers: { Authorization: `Bearer ${access_token}` } }
+    );
+
+    const { id: kakaoId, kakao_account } = userInfoResponse.data;
+    const { email, profile } = kakao_account;
+
+    return createOrUpdateUser({
+      username: profile.nickname,
+      email,
+      password: "",
+      full_name: profile.nickname,
+      profile_image_url: profile.profile_image_url,
+      provider: "kakao",
+      provider_id: kakaoId.toString(),
+      login_type: "kakao",
+      type: "user",
+    });
+  });
+
+export const naverLogin = (req: Request, res: Response) =>
+  handleSocialLogin(
+    req,
+    res,
+    async ({ code, state }: { code: string; state: string }) => {
+      const tokenResponse = await axios.post(
+        "https://nid.naver.com/oauth2.0/token",
+        null,
+        {
+          params: {
+            grant_type: "authorization_code",
+            client_id: process.env.NAVER_CLIENT_ID,
+            client_secret: process.env.NAVER_CLIENT_SECRET,
+            code,
+            state,
+          },
+        }
+      );
+
+      const { access_token } = tokenResponse.data;
+      const userInfoResponse = await axios.get(
+        "https://openapi.naver.com/v1/nid/me",
+        { headers: { Authorization: `Bearer ${access_token}` } }
+      );
+
+      const { response: naverUserInfo } = userInfoResponse.data;
+      const { id: naverId, email, name, profile_image } = naverUserInfo;
+
+      return createOrUpdateUser({
+        username: `${name}_${Math.random().toString(36).substr(2, 5)}`,
+        email,
+        password: "",
+        full_name: name,
+        profile_image_url: profile_image,
+        provider: "naver",
+        provider_id: naverId,
+        login_type: "naver",
+        type: "user",
+      });
+    }
+  );
+
+export const googleLogin = (req: Request, res: Response) =>
+  handleSocialLogin(
+    req,
+    res,
+    async ({ credential }: { credential: string }) => {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new Error("Failed to get Google user info");
+      }
+
+      const { sub: googleId, email, name, picture } = payload;
+
+      if (!email) {
+        throw new Error("Email not provided by Google");
+      }
+
+      return createOrUpdateUser({
+        username: name || email.split("@")[0],
+        email,
+        password: "",
+        full_name: name || "",
+        profile_image_url: picture || "",
+        provider: "google",
+        provider_id: googleId,
+        login_type: "google",
+        type: "user",
+      });
+    }
+  );
+
+export const githubLogin = (req: Request, res: Response) =>
+  handleSocialLogin(req, res, async ({ code }: { code: string }) => {
+    const tokenResponse = await axios.post(
+      "https://github.com/login/oauth/access_token",
+      null,
+      {
+        params: {
+          client_id: process.env.GITHUB_CLIENT_ID,
+          client_secret: process.env.GITHUB_CLIENT_SECRET,
+          code,
+        },
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const { access_token } = tokenResponse.data;
+
+    const userInfoResponse = await axios.get("https://api.github.com/user", {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+
+    const { id: githubId, email, name, avatar_url } = userInfoResponse.data;
+
+    return createOrUpdateUser({
+      username: name || email.split("@")[0],
+      email,
+      password: "",
+      full_name: name || "",
+      profile_image_url: avatar_url || "",
+      provider: "github",
+      provider_id: githubId.toString(),
+      login_type: "github",
+      type: "user",
+    });
+  });
+
 export const refreshToken = async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
   if (!refreshToken) {
@@ -152,9 +362,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     const decoded = jwt.verify(
       refreshToken,
       process.env.JWT_REFRESH_SECRET!
-    ) as JwtPayload;
-
-    // _id 대신 userId 사용
+    ) as jwt.JwtPayload;
     const user = await userModel.getUserById(decoded.userId);
 
     if (!user) {
@@ -171,294 +379,6 @@ export const refreshToken = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Refresh token error:", error);
     res.status(401).json({ message: "Invalid refresh token" });
-  }
-};
-export const kakaoLogin = async (req: Request, res: Response) => {
-  console.log("Received kakao login request:", req.body);
-  const { code } = req.body;
-
-  try {
-    const { code } = req.body;
-
-    // 카카오 액세스 토큰 얻기
-    let tokenResponse;
-    try {
-      tokenResponse = await axios.post(
-        "https://kauth.kakao.com/oauth/token",
-        null,
-        {
-          params: {
-            grant_type: "authorization_code",
-            client_id: process.env.KAKAO_APP_KEY,
-            redirect_uri: process.env.KAKAO_REDIRECT_URI,
-            code,
-          },
-        }
-      );
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        console.error("Kakao token error:", error.response.data);
-        return res.status(400).json({
-          ok: 0,
-          message: "Failed to get Kakao token",
-          error: error.response.data,
-        });
-      }
-      throw error;
-    }
-
-    console.log("Kakao token response:", tokenResponse.data);
-    const { access_token } = tokenResponse.data;
-
-    const userInfoResponse = await axios.get(
-      "https://kapi.kakao.com/v2/user/me",
-      {
-        headers: { Authorization: `Bearer ${access_token}` },
-      }
-    );
-
-    const { id: kakaoId, kakao_account } = userInfoResponse.data;
-    const { email, profile } = kakao_account;
-
-    let user = await userModel.getUserByEmail(email);
-    if (!user) {
-      user = await userModel.createUser({
-        username: profile.nickname,
-        email,
-        password: "",
-        full_name: profile.nickname,
-        profile_image_url: profile.profile_image_url,
-        provider: "kakao",
-        provider_id: kakaoId.toString(),
-        login_type: "kakao",
-        type: "user",
-      });
-    } else {
-      user = await userModel.updateUser(user.id!, {
-        login_type: "kakao",
-        profile_image_url: profile.profile_image_url,
-        provider: "kakao",
-        provider_id: kakaoId.toString(),
-      });
-    }
-
-    const accessToken = jwt.sign(
-      { userId: user?.id, email: user?.email, type: user?.type },
-      process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
-    );
-
-    const refreshToken = jwt.sign(
-      { userId: user?.id },
-      process.env.JWT_REFRESH_SECRET!,
-      { expiresIn: "30d" }
-    );
-
-    res.json({
-      ok: 1,
-      item: {
-        _id: user?.id,
-        email: user?.email,
-        name: user?.username,
-        type: user?.type,
-        loginType: user?.login_type,
-        phone: user?.phone,
-        address: user?.address,
-        createdAt: user?.created_at,
-        updatedAt: user?.updated_at,
-        token: {
-          accessToken,
-          refreshToken,
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Kakao login error:", error);
-    res.status(500).json({
-      ok: 0,
-      message: "서버 에러가 발생했습니다.",
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-};
-export const naverLogin = async (req: Request, res: Response) => {
-  try {
-    const { code, state } = req.body;
-    if (!code || !state) {
-      return res.status(400).json({
-        ok: 0,
-        message: "Missing code or state",
-      });
-    }
-    // 네이버 액세스 토큰 얻기
-    const tokenResponse = await axios.post(
-      "https://nid.naver.com/oauth2.0/token",
-      null,
-      {
-        params: {
-          grant_type: "authorization_code",
-          client_id: process.env.NAVER_CLIENT_ID,
-          client_secret: process.env.NAVER_CLIENT_SECRET,
-          code,
-          state,
-        },
-      }
-    );
-
-    const { access_token } = tokenResponse.data;
-
-    if (!access_token) {
-      throw new Error("Failed to get access token from Naver");
-    }
-
-    // 네이버 사용자 정보 얻기
-    const userInfoResponse = await axios.get(
-      "https://openapi.naver.com/v1/nid/me",
-      {
-        headers: { Authorization: `Bearer ${access_token}` },
-      }
-    );
-
-    const { response: naverUserInfo } = userInfoResponse.data;
-    const { id: naverId, email, name, profile_image } = naverUserInfo;
-
-    // 사용자 정보로 DB에서 사용자 찾기 또는 새로 생성
-    let user = await userModel.getUserByEmail(email);
-    if (!user) {
-      const uniqueUsername = `${name}_${Math.random()
-        .toString(36)
-        .substr(2, 5)}`;
-      user = await userModel.createUser({
-        username: uniqueUsername,
-        email,
-        password: "",
-        full_name: name,
-        profile_image_url: profile_image,
-        provider: "naver",
-        provider_id: naverId,
-        login_type: "naver",
-        type: "user",
-      });
-    }
-
-    // JWT 토큰 생성
-    const { accessToken, refreshToken } = generateTokens(user.id!, user.type!);
-
-    // 클라이언트에 응답 보내기
-    res.json({
-      ok: 1,
-      item: {
-        _id: user.id,
-        email: user.email,
-        name: user.username,
-        type: user.type,
-        loginType: user.login_type,
-        phone: user.phone,
-        address: user.address,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at,
-        token: {
-          accessToken,
-          refreshToken,
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Naver login error:", error);
-    res.status(500).json({
-      ok: 0,
-      message: "서버 에러가 발생했습니다.",
-      error,
-    });
-  }
-};
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-export const googleLogin = async (req: Request, res: Response) => {
-  try {
-    const { credential } = req.body;
-
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-    if (!payload) {
-      throw new Error("Failed to get Google user info");
-    }
-
-    const { sub: googleId, email, name, picture } = payload;
-
-    if (!email) {
-      throw new Error("Email not provided by Google");
-    }
-
-    // 사용자 정보로 DB에서 사용자 찾기 또는 새로 생성
-    let user = await userModel.getUserByEmail(email);
-
-    if (user) {
-      // 기존 사용자의 경우 login_type과 profile_image_url 업데이트
-      user = await userModel.updateUser(user.id!, {
-        login_type: "google",
-        profile_image_url: picture,
-        provider: "google",
-        provider_id: googleId,
-      });
-
-      if (!user) {
-        throw new Error("Failed to update existing user");
-      }
-    } else {
-      // 새 사용자 생성
-      user = await userModel.createUser({
-        username: name || email.split("@")[0], // name이 없을 경우 이메일의 앞부분을 사용
-        email: email,
-        password: "", // 소셜 로그인 사용자는 비밀번호 없음
-        full_name: name || "",
-        profile_image_url: picture || "",
-        provider: "google",
-        provider_id: googleId,
-        login_type: "google",
-        type: "user",
-      });
-
-      if (!user) {
-        throw new Error("Failed to create new user");
-      }
-    }
-
-    // JWT 토큰 생성
-    const { accessToken, refreshToken } = generateTokens(user.id!, user.type!);
-
-    // 클라이언트에 응답 보내기
-    res.json({
-      ok: 1,
-      item: {
-        _id: user.id,
-        email: user.email,
-        name: user.username,
-        type: user.type,
-        loginType: user.login_type,
-        phone: user.phone,
-        address: user.address,
-        profile_image_url: user.profile_image_url,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at,
-        token: {
-          accessToken,
-          refreshToken,
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Google login error:", error);
-    res.status(500).json({
-      ok: 0,
-      message: "서버 에러가 발생했습니다.",
-      error: error instanceof Error ? error.message : String(error),
-    });
   }
 };
 

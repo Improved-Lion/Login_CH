@@ -1,7 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 
-import useKakaoLogin from "@/hooks/useKakaoLogin";
+import useKakaoLogin from "@/components/login/useKakaoLogin";
 import client from "@/api/client";
 import { useAuthStore } from "@/store/authStore";
 

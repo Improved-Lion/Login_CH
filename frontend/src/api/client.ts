@@ -37,8 +37,10 @@ client.interceptors.response.use(
         localStorage.removeItem("refreshToken");
         useAuthStore.getState().logout();
 
-        // 로그인 페이지로 리다이렉트
-        window.location.href = "/login";
+        // 현재 페이지가 /login/email이 아닐 경우에만 리다이렉트
+        if (window.location.pathname !== "/login/email") {
+          window.location.href = "/login/email";
+        }
         return Promise.reject(refreshError);
       }
     }

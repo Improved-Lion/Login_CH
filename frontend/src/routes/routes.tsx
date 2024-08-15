@@ -4,9 +4,9 @@ import RootLayout from "@/layouts/RootLayout";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 import Spinner from "@/components/common/Spinner";
 
-const lazyLoad = (Component: React.LazyExoticComponent<() => JSX.Element>) => (
+const lazyLoad = (Component: React.LazyExoticComponent<any>, props?: any) => (
   <Suspense fallback={<Spinner />}>
-    <Component />
+    <Component {...props} />
   </Suspense>
 );
 
@@ -22,6 +22,7 @@ const pages = {
   Intro: lazy(() => import("@/pages/Intro")),
   ForgotPassword: lazy(() => import("@/pages/ForgotPassword")),
   ResetPassword: lazy(() => import("@/pages/ResetPassword")),
+  LoginCallback: lazy(() => import("@/components/login/LoginCallback")),
 };
 
 const router = createBrowserRouter([
@@ -67,6 +68,18 @@ const router = createBrowserRouter([
       },
       { path: "forgotPassword", element: lazyLoad(pages.ForgotPassword) },
       { path: "resetPassword", element: lazyLoad(pages.ResetPassword) },
+      {
+        path: "login/kakao/callback",
+        element: lazyLoad(pages.LoginCallback, { provider: "kakao" }),
+      },
+      {
+        path: "login/naver/callback",
+        element: lazyLoad(pages.LoginCallback, { provider: "naver" }),
+      },
+      {
+        path: "login/github/callback",
+        element: lazyLoad(pages.LoginCallback, { provider: "github" }),
+      },
       {
         path: "*",
         element: <Navigate to={isAuthenticated() ? "/" : "/intro"} replace />,
