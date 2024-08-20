@@ -1,4 +1,3 @@
-// src/api/client.ts
 import axios from "axios";
 import { useAuthStore } from "@/store/authStore";
 
@@ -6,6 +5,17 @@ const client = axios.create({
   baseURL: "http://localhost:3000/api",
   withCredentials: true,
 });
+
+client.interceptors.request.use(
+  (config) => {
+    const token = sessionStorage.getItem("token");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 client.interceptors.response.use(
   (response) => response,
@@ -18,29 +28,22 @@ client.interceptors.response.use(
         if (!refreshToken) {
           throw new Error("No refresh token available");
         }
+        console.log("Attempting to refresh token...");
         const res = await client.post("/auth/refresh", { refreshToken });
         const { accessToken } = res.data;
 
-        // 새 액세스 토큰을 sessionStorage에만 저장
+        console.log("Token refreshed successfully");
         sessionStorage.setItem("token", accessToken);
-
-        // authStore 업데이트
         useAuthStore.getState().setToken(accessToken);
 
         originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
         return client(originalRequest);
       } catch (refreshError) {
-        console.error("Refresh token 에러:", refreshError);
-
-        // 토큰 제거 및 로그아웃
-        sessionStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
+        console.error("Refresh token error:", refreshError);
         useAuthStore.getState().logout();
 
-        // 현재 페이지가 /login/email이 아닐 경우에만 리다이렉트
-        if (window.location.pathname !== "/login/email") {
-          window.location.href = "/login/email";
-        }
+        // 로그아웃 후 홈페이지로 리다이렉트
+        window.location.href = "/";
         return Promise.reject(refreshError);
       }
     }

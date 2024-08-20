@@ -27,7 +27,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   login: (accessToken: string, refreshToken: string, user: User) => void;
   logout: () => void;
-  clearToken: () => void; // clearToken 함수 추가
+  clearToken: () => void;
   initialize: () => Promise<void>;
 }
 
@@ -38,7 +38,10 @@ export const useAuthStore = create(
       user: null,
       isAuthenticated: false,
       isLoading: true,
-      setToken: (token) => set({ token, isAuthenticated: !!token }),
+      setToken: (token) => {
+        sessionStorage.setItem("token", token || "");
+        set({ token, isAuthenticated: !!token });
+      },
       setUser: (user) => set({ user }),
       login: (accessToken, refreshToken, user) => {
         sessionStorage.setItem("token", accessToken);
@@ -51,9 +54,8 @@ export const useAuthStore = create(
         set({ token: null, user: null, isAuthenticated: false });
       },
       clearToken: () => {
-        // clearToken 함수 구현
-        set({ token: null, isAuthenticated: false });
         sessionStorage.removeItem("token");
+        set({ token: null, isAuthenticated: false });
       },
       initialize: async () => {
         set({ isLoading: true });
@@ -69,16 +71,16 @@ export const useAuthStore = create(
             });
           } catch (error) {
             console.error("Failed to fetch user data:", error);
+            get().clearToken();
             if (refreshToken) {
               try {
                 const refreshResponse = await client.post("/auth/refresh", {
                   refreshToken,
                 });
                 const newAccessToken = refreshResponse.data.accessToken;
-                sessionStorage.setItem("token", newAccessToken);
+                get().setToken(newAccessToken);
                 const userResponse = await client.get("/users/me");
                 set({
-                  token: newAccessToken,
                   user: userResponse.data,
                   isAuthenticated: true,
                 });

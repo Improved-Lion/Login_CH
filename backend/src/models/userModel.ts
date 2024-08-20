@@ -148,3 +148,12 @@ export const updateUser = async (
   const result = await pool.query(query, [id, ...values]);
   return result.rows[0] || null;
 };
+
+export const getUserByProviderAndProviderId = async (
+  provider: string,
+  providerId: string
+): Promise<User | null> => {
+  const query = "SELECT * FROM users WHERE provider = $1 AND provider_id = $2";
+  const result = await pool.query(query, [provider, providerId]);
+  return result.rows[0] || null;
+};

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import client from "@/api/client";
@@ -29,6 +29,13 @@ const HomeContainer = () => {
     }
   }, [token, setUser]);
 
+  const handleLogout = useCallback(() => {
+    logout();
+    sessionStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    navigate("/login");
+  }, [logout, navigate]);
+
   useEffect(() => {
     const checkAuth = async () => {
       const accessToken = sessionStorage.getItem("token");
@@ -46,20 +53,15 @@ const HomeContainer = () => {
           await fetchUserInfo();
         } catch (error) {
           console.error("Error refreshing token:", error);
-          navigate("/login");
+          handleLogout();
         }
       } else {
-        navigate("/login");
+        handleLogout();
       }
     };
 
     checkAuth();
-  }, [setToken, fetchUserInfo, navigate]);
-
-  const handleLogout = useCallback(() => {
-    logout(); // useAuthStore의 logout 함수 사용
-    navigate("/login");
-  }, [logout, navigate]);
+  }, [setToken, fetchUserInfo, handleLogout]);
 
   return (
     <HomeWrapper>

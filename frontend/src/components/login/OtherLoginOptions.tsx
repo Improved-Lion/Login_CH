@@ -1,3 +1,4 @@
+import React from "react";
 import * as S from "@/components/login/Login.styled";
 import useGoogleLogin from "@/hooks/useGoogleLogin";
 import useGithubLogin from "@/hooks/useGithubLogin";

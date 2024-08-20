@@ -182,8 +182,6 @@ const handleSocialLogin = async (
         name: user.username,
         type: user.type,
         loginType: user.login_type,
-        phone: user.phone,
-        address: user.address,
         profile_image_url: user.profile_image_url,
         createdAt: user.created_at,
         updatedAt: user.updated_at,
@@ -316,42 +314,77 @@ export const googleLogin = (req: Request, res: Response) =>
 
 export const githubLogin = (req: Request, res: Response) =>
   handleSocialLogin(req, res, async ({ code }: { code: string }) => {
-    const tokenResponse = await axios.post(
-      "https://github.com/login/oauth/access_token",
-      null,
-      {
-        params: {
-          client_id: process.env.GITHUB_CLIENT_ID,
-          client_secret: process.env.GITHUB_CLIENT_SECRET,
-          code,
-        },
-        headers: {
-          Accept: "application/json",
-        },
+    try {
+      // Get GitHub access token
+      const tokenResponse = await axios.post(
+        "https://github.com/login/oauth/access_token",
+        null,
+        {
+          params: {
+            client_id: process.env.GITHUB_CLIENT_ID,
+            client_secret: process.env.GITHUB_CLIENT_SECRET,
+            code,
+          },
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      const { access_token } = tokenResponse.data;
+      if (!access_token) {
+        throw new Error("Failed to get access token from GitHub");
       }
-    );
 
-    const { access_token } = tokenResponse.data;
+      // Get user info from GitHub
+      const userInfoResponse = await axios.get("https://api.github.com/user", {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": process.env.APP_NAME || "Improved Lion",
+        },
+      });
 
-    const userInfoResponse = await axios.get("https://api.github.com/user", {
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
+      const githubUser = userInfoResponse.data;
 
-    const { id: githubId, email, name, avatar_url } = userInfoResponse.data;
+      // If email is not public, fetch it separately
+      let email = githubUser.email;
+      if (!email) {
+        const emailResponse = await axios.get(
+          "https://api.github.com/user/emails",
+          {
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+              Accept: "application/vnd.github.v3+json",
+              "User-Agent": process.env.APP_NAME || "Improved Lion",
+            },
+          }
+        );
+        const primaryEmail = emailResponse.data.find((e: any) => e.primary);
+        email = primaryEmail ? primaryEmail.email : null;
+      }
 
-    return createOrUpdateUser({
-      username: name || email.split("@")[0],
-      email,
-      password: "",
-      full_name: name || "",
-      profile_image_url: avatar_url || "",
-      provider: "github",
-      provider_id: githubId.toString(),
-      login_type: "github",
-      type: "user",
-    });
+      return createOrUpdateUser({
+        username: githubUser.login,
+        email: email || `${githubUser.login}@github.com`,
+        password: "",
+        full_name: githubUser.name || "",
+        profile_image_url: githubUser.avatar_url || "",
+        provider: "github",
+        provider_id: githubUser.id.toString(),
+        login_type: "github",
+        type: "user",
+      });
+    } catch (error) {
+      console.error("GitHub login error:", error);
+      if (axios.isAxiosError(error)) {
+        console.error("Response data:", error.response?.data);
+        console.error("Response status:", error.response?.status);
+      }
+      throw new Error("GitHub login failed: " + (error as Error).message);
+    }
   });
-
+// Helper functions
 export const refreshToken = async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
   if (!refreshToken) {

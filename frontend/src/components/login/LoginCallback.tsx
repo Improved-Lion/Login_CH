@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import useKakaoLogin from "@/hooks/useKakaoLogin";
 import useNaverLogin from "@/hooks/useNaverLogin";
@@ -14,15 +14,17 @@ const LoginCallback = ({ provider }: LoginCallbackProps) => {
   const { handleKakaoCallback } = useKakaoLogin();
   const { handleNaverCallback } = useNaverLogin();
   const { handleGithubCallback } = useGithubLogin();
-  const hasProcessed = useRef(false);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const code = searchParams.get("code");
     const state = searchParams.get("state");
 
-    if (code && !hasProcessed.current) {
-      hasProcessed.current = true;
+    console.log(
+      `LoginCallback: provider=${provider}, code=${code}, state=${state}`
+    );
+
+    if (code) {
       switch (provider) {
         case "kakao":
           handleKakaoCallback(code);
@@ -31,11 +33,15 @@ const LoginCallback = ({ provider }: LoginCallbackProps) => {
           if (state) handleNaverCallback(code, state);
           break;
         case "github":
-          handleGithubCallback(code);
+          if (state) handleGithubCallback(code, state);
           break;
+        default:
+          console.error("Unknown provider:", provider);
+          navigate("/login");
       }
-    } else if (!code) {
-      navigate("/login", { replace: true });
+    } else {
+      console.error("No code found in URL");
+      navigate("/login");
     }
   }, [
     location,
