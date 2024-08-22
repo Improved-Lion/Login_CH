@@ -3,6 +3,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import userRoutes from "./routes/userRoute";
 import authRoutes from "./routes/authRoute";
+import postRoutes from "./routes/postRoute";
 import cors from "cors";
 import path from "path";
 
@@ -50,6 +51,7 @@ if (!JWT_SECRET) {
 // 라우트 설정
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/posts", postRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 app.listen(port, () => {
