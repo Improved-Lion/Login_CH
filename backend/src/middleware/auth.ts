@@ -77,6 +77,11 @@ export const authenticateToken = (
 
   jwt.verify(token, process.env.JWT_SECRET!, (err: any, decoded: any) => {
     if (err) {
+      if (err.name === "TokenExpiredError") {
+        return res
+          .status(401)
+          .json({ message: "Token expired", errorType: "TOKEN_EXPIRED" });
+      }
       console.error("Token verification error:", err);
       return res.status(403).json({ message: "Invalid token" });
     }
@@ -86,5 +91,4 @@ export const authenticateToken = (
     next();
   });
 };
-
 // 추가 인증 관련 함수들...

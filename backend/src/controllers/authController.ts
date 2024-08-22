@@ -384,7 +384,38 @@ export const githubLogin = (req: Request, res: Response) =>
       throw new Error("GitHub login failed: " + (error as Error).message);
     }
   });
-// Helper functions
+
+export const facebookLogin = (req: Request, res: Response) =>
+  handleSocialLogin(
+    req,
+    res,
+    async ({ accessToken }: { accessToken: string }) => {
+      try {
+        // Facebook Graph API를 사용하여 사용자 정보 가져오기
+        const userInfoResponse = await axios.get(
+          `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${accessToken}`
+        );
+
+        const { id: facebookId, name, email, picture } = userInfoResponse.data;
+
+        return createOrUpdateUser({
+          username: name,
+          email: email || `${facebookId}@facebook.com`,
+          password: "",
+          full_name: name,
+          profile_image_url: picture?.data?.url || "",
+          provider: "facebook",
+          provider_id: facebookId,
+          login_type: "facebook",
+          type: "user",
+        });
+      } catch (error) {
+        console.error("Facebook login error:", error);
+        throw new Error("Facebook login failed: " + (error as Error).message);
+      }
+    }
+  );
+
 export const refreshToken = async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
   if (!refreshToken) {
@@ -396,19 +427,19 @@ export const refreshToken = async (req: Request, res: Response) => {
       refreshToken,
       process.env.JWT_REFRESH_SECRET!
     ) as jwt.JwtPayload;
-    const user = await userModel.getUserById(decoded.userId);
+    const user = await userModel.getUserByEmail(decoded.userEmail);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const accessToken = jwt.sign(
-      { userId: user.id, email: user.email, type: user.type },
-      process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(
+      user.id!,
+      user.email!,
+      user.type!
     );
 
-    res.json({ accessToken });
+    res.json({ accessToken, refreshToken: newRefreshToken });
   } catch (error) {
     console.error("Refresh token error:", error);
     res.status(401).json({ message: "Invalid refresh token" });
