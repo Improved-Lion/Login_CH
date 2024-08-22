@@ -23,6 +23,9 @@ const pages = {
   ForgotPassword: lazy(() => import("@/pages/ForgotPassword")),
   ResetPassword: lazy(() => import("@/pages/ResetPassword")),
   LoginCallback: lazy(() => import("@/components/login/LoginCallback")),
+  Board: lazy(() => import("@/pages/Board")),
+  Chat: lazy(() => import("@/pages/Chat")),
+  Profile: lazy(() => import("@/pages/Profile")),
 };
 
 const router = createBrowserRouter([
@@ -83,6 +86,18 @@ const router = createBrowserRouter([
       {
         path: "*",
         element: <Navigate to={isAuthenticated() ? "/" : "/intro"} replace />,
+      },
+      {
+        path: "board",
+        element: <ProtectedRoute>{lazyLoad(pages.Board)}</ProtectedRoute>,
+      },
+      {
+        path: "chat",
+        element: <ProtectedRoute>{lazyLoad(pages.Chat)}</ProtectedRoute>,
+      },
+      {
+        path: "profile",
+        element: <ProtectedRoute>{lazyLoad(pages.Profile)}</ProtectedRoute>,
       },
     ],
   },

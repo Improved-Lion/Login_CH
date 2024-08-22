@@ -5,6 +5,7 @@ import { RouterProvider } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import router from "./routes/routes";
 import GlobalStyle from "@/styles/GlobalStyles";
+import Spinner from "./components/common/Spinner";
 
 const queryClient = new QueryClient();
 
@@ -14,7 +15,7 @@ const App = () => {
       <GlobalStyle />
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
-          <Suspense fallback={<text>Loading...</text>}>
+          <Suspense fallback={<Spinner />}>
             <RouterProvider router={router}></RouterProvider>
           </Suspense>
           <ReactQueryDevtools initialIsOpen={true} />

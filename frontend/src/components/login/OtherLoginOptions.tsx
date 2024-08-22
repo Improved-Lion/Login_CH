@@ -1,11 +1,12 @@
-import React from "react";
 import * as S from "@/components/login/Login.styled";
 import useGoogleLogin from "@/hooks/useGoogleLogin";
 import useGithubLogin from "@/hooks/useGithubLogin";
+import useFacebookLogin from "@/hooks/useFacebookLogin";
 
 const OtherLoginOptions = () => {
   const { handleGoogleLogin } = useGoogleLogin();
   const { handleGithubLogin } = useGithubLogin();
+  const { handleFacebookLogin } = useFacebookLogin();
 
   return (
     <>
@@ -19,7 +20,7 @@ const OtherLoginOptions = () => {
         <S.OtherLoginButton onClick={handleGoogleLogin}>
           <S.OtherLoginIcon src="/google.webp" alt="Google" />
         </S.OtherLoginButton>
-        <S.OtherLoginButton>
+        <S.OtherLoginButton onClick={handleFacebookLogin}>
           <S.OtherLoginIcon src="/facebook.webp" alt="Facebook" />
         </S.OtherLoginButton>
         <S.OtherLoginButton onClick={handleGithubLogin}>

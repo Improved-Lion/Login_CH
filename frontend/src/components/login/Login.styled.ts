@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import ResetPassword from "../../pages/ResetPassword";
 import { Link } from "react-router-dom";
 
 export const LoginContainer = styled.div`
