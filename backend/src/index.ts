@@ -4,6 +4,8 @@ import swaggerJsdoc from "swagger-jsdoc";
 import userRoutes from "./routes/userRoute";
 import authRoutes from "./routes/authRoute";
 import postRoutes from "./routes/postRoute";
+import categoryRoutes from "./routes/categoryRoute";
+import tagRoutes from "./routes/tagRoute";
 import cors from "cors";
 import path from "path";
 
@@ -52,6 +54,8 @@ if (!JWT_SECRET) {
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/tags", tagRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 app.listen(port, () => {
