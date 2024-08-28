@@ -30,7 +30,7 @@ const NavItem = styled(NavLink)`
   }
 `;
 
-const Gnb: React.FC = () => {
+const Footer: React.FC = () => {
   return (
     <NavContainer>
       <NavItem to="/" end>
@@ -58,4 +58,4 @@ const Gnb: React.FC = () => {
   );
 };
 
-export default Gnb;
+export default Footer;

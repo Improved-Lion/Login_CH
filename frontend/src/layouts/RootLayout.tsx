@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import { Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import Gnb from "@/layouts/Gnb";
+import Footer from "@/layouts/Footer";
 
 const AppContainer = styled.div`
   display: flex;
@@ -25,7 +25,7 @@ const RootLayout = () => {
       <Main>
         <Outlet />
       </Main>
-      <Gnb />
+      <Footer />
       <Toaster />
     </AppContainer>
   );
