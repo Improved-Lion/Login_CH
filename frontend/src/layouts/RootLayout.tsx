@@ -1,34 +1,40 @@
-import styled from "styled-components";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import Footer from "@/layouts/Footer";
+import Gnb from "./Gnb";
+import * as S from "./Layout.styled";
 
-const AppContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
-  background-color: #fff8e1;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-`;
-
-const Main = styled.main`
-  flex: 1;
-  overflow-y: auto;
-`;
-
-const RootLayout = () => {
+// 인증 상태를 확인하는 커스텀 훅
+const useAuth = () => {
   return (
-    <AppContainer>
-      <Main>
-        <Outlet />
-      </Main>
-      <Footer />
-      <Toaster />
-    </AppContainer>
+    sessionStorage.getItem("token") !== null ||
+    localStorage.getItem("refreshToken") !== null
   );
 };
 
+const RootLayout: React.FC = () => {
+  const isAuthenticated = useAuth();
+  const location = useLocation();
+
+  const authPages = [
+    "/intro",
+    "/login",
+    "/signUp",
+    "/forgotPassword",
+    "/resetPassword",
+    "/login/email",
+  ];
+  const isAuthPage = authPages.includes(location.pathname);
+
+  return (
+    <S.AppContainer>
+      {!isAuthPage && <Gnb />}
+      <S.Main>
+        <Outlet />
+      </S.Main>
+      {!isAuthPage && <Footer />}
+      <Toaster />
+    </S.AppContainer>
+  );
+};
 export default RootLayout;

@@ -4,10 +4,10 @@ import { User } from "../models/userModel";
 
 declare global {
   namespace Express {
-    interface Request {
-      user?: {
-        userId: number;
-      };
+    export interface Request {
+      userId?: number;
+      userEmail?: string;
+      userType?: string;
     }
   }
 }

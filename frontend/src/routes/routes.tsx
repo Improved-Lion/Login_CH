@@ -23,9 +23,11 @@ const pages = {
   ForgotPassword: lazy(() => import("@/pages/ForgotPassword")),
   ResetPassword: lazy(() => import("@/pages/ResetPassword")),
   LoginCallback: lazy(() => import("@/components/login/LoginCallback")),
-  Board: lazy(() => import("@/pages/Board")),
+  Mentoring: lazy(() => import("@/pages/Mentoring")),
+  Lecture: lazy(() => import("@/pages/Lecture")),
   Chat: lazy(() => import("@/pages/Chat")),
   Profile: lazy(() => import("@/pages/Profile")),
+  Community: lazy(() => import("@/pages/Community")),
 };
 
 const router = createBrowserRouter([
@@ -88,8 +90,12 @@ const router = createBrowserRouter([
         element: <Navigate to={isAuthenticated() ? "/" : "/intro"} replace />,
       },
       {
-        path: "board",
-        element: <ProtectedRoute>{lazyLoad(pages.Board)}</ProtectedRoute>,
+        path: "Mentoring",
+        element: <ProtectedRoute>{lazyLoad(pages.Mentoring)}</ProtectedRoute>,
+      },
+      {
+        path: "lecture",
+        element: <ProtectedRoute>{lazyLoad(pages.Lecture)}</ProtectedRoute>,
       },
       {
         path: "chat",
@@ -98,6 +104,10 @@ const router = createBrowserRouter([
       {
         path: "profile",
         element: <ProtectedRoute>{lazyLoad(pages.Profile)}</ProtectedRoute>,
+      },
+      {
+        path: "community",
+        element: <ProtectedRoute>{lazyLoad(pages.Community)}</ProtectedRoute>,
       },
     ],
   },

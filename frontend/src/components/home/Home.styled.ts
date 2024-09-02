@@ -1,14 +1,32 @@
 import styled from "styled-components";
 
 export const HomeWrapper = styled.div`
+  //display: flex;
+  //flex-direction: column;
+  //align-items: center;
+  //justify-content: center;
+  //height: 100%;
+  //padding: 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 12px;
+  padding: 20px;
+  max-width: 480px;
+  margin: 0 auto;
+  @media (min-width: 1024px) {
+    max-width: 100%;
+  }
+`;
+export const Section = styled.section`
+  margin-bottom: 40px;
 `;
 
+export const SectionTitle = styled.h2`
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #333;
+  border-bottom: 2px solid #ffa000;
+  padding-bottom: 10px;
+`;
 export const UserImage = styled.img`
   width: 150px;
   height: 150px;

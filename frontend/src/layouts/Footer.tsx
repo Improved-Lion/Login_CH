@@ -1,60 +1,38 @@
-import { NavLink } from "react-router-dom";
-import styled from "styled-components";
+// Footer.tsx
 import {
   Home,
-  Clipboard,
+  GraduationCap,
+  BookOpen,
   MessageCircle,
   User,
-  ShoppingBag,
+  UsersRound,
 } from "lucide-react";
-
-const NavContainer = styled.nav`
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  background-color: #fff8e1;
-  border-top: 1px solid #e0e0e0;
-  padding: 10px 0;
-`;
-
-const NavItem = styled(NavLink)`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #707070;
-  text-decoration: none;
-  font-size: 12px;
-
-  &.active {
-    color: #ffa000;
-  }
-`;
+import * as S from "./Layout.styled";
 
 const Footer: React.FC = () => {
   return (
-    <NavContainer>
-      <NavItem to="/" end>
+    <S.NavContainer>
+      <S.NavItem to="/">
         <Home size={24} />
         Home
-      </NavItem>
-      <NavItem to="/board">
-        <Clipboard size={24} />
-        Board
-      </NavItem>
-      <NavItem to="/shop">
-        <ShoppingBag size={24} />
-        Shop
-      </NavItem>
-
-      <NavItem to="/chat">
+      </S.NavItem>
+      <S.NavItem to="/mentoring">
+        <GraduationCap size={24} />
+        Mentoring
+      </S.NavItem>
+      <S.NavItem to="/lecture">
+        <BookOpen size={24} />
+        Lecture
+      </S.NavItem>
+      <S.NavItem to="/chat">
         <MessageCircle size={24} />
         Chat
-      </NavItem>
-      <NavItem to="/profile">
-        <User size={24} />
-        Profile
-      </NavItem>
-    </NavContainer>
+      </S.NavItem>
+      <S.NavItem to="/community">
+        <UsersRound size={24} />
+        Community
+      </S.NavItem>
+    </S.NavContainer>
   );
 };
 
